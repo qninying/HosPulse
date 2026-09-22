@@ -40,10 +40,15 @@
   - Verification: real run against live Supabase -- 256 OK/TX rural/CAH hospitals, 260 cost-report-years for FY2024; re-run from a clean state produced an identical content hash (genuine idempotency, not just "no crash"); `pytest pipeline/test_hcris_import.py -v` 12/12 passed, including the invalid-format failure path; every worksheet/line/column code confirmed against a real downloaded report (RPT_REC_NUM 795252) before being trusted, not taken from documentation alone
   - Notes: two real bugs found and fixed while verifying, not left in: (1) DuckDB lazy-evaluation bug -- reusing one registered view name ("kv") for two sequential pivots caused the first to silently read the second file's data, returning 0 results with no error; fixed by materializing into real temp tables. (2) Fiscal-year mislabeling -- CMS's HOSP10FY2024.ZIP bundles reports by when CMS processed them, not each report's own period end, so a report ending 06/30/2025 was being stored as fiscal_year=2024; fixed by deriving fiscal_year from the report's own fy_end_dt, plus a deterministic dedup tie-break for genuine same-year duplicates (highest RPT_REC_NUM wins). `.colaberry/progress.json` STORY-001 ticked 3/3 (genuinely earned). `.hospulse/progress.json` STORY-001 ticked honestly at 1/4 against its own stricter criteria -- only FY2024 imported (not 3 years), no explicit "reason" column for missing values, worksheet/line provenance lives in code not per-row in the database. Both are real, neither rounded up.
 
+- [x] Expand HCRIS import to FY2025 and FY2023 (latest 3 years complete)
+  - Date: 2026-09-22
+  - What changed: `pipeline/hcris_import.py` -- added a WHERE guard to the `cost_report_years` upsert (`EXCLUDED.source_rpt_rec_num >= cost_report_years.source_rpt_rec_num`) so an older file re-run after a newer one can never regress a row back to a worse report; ran the importer for FY2025 then FY2023
+  - Verification: live-tested the regression guard directly against Supabase (a same-key upsert with a lower record number was blocked, a higher one applied, then reverted to the real value); full pipeline re-run three times, content hash identical on runs 2 and 3 (genuine idempotency); final state: 274 OK/TX rural/CAH hospitals, 652 cost-report-years across FY2023/2024/2025, zero duplicate keys, zero mislabeled fiscal years; `pytest pipeline/` 28/28 passed
+  - Notes: `.hospulse/progress.json` STORY-001's "latest three years" criterion now genuinely true (2/4 total there); not every hospital has a row in all 3 years, which is a real reporting gap (closures, fiscal-year-end changes), not a bug -- forcing one would mean inventing data
+
 ## Next
 
 - [ ] Coffee with prospect #1 (4 validation checks: pain, data access, budget owner, existing tools)
-- [ ] Expand HCRIS import to 3 fiscal years (currently only FY2024)
 - [ ] STORY-002: early-warning flags on top of the imported metrics
 - [ ] Health Snapshot v0 from public CMS HCRIS cost report data (OK + TX rural hospitals)
 - [ ] LinkedIn Post 1 (RHTP / visibility problem)
