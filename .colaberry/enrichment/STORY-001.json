@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-001",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-22T22:10:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "systems",
+      "value": "Imports directly from downloads.cms.gov/FILES/HCRIS/HOSP10FY{year}.ZIP, the official CMS HCRIS flat-file distribution, not a third-party dataset.",
+      "evidence": "pipeline/hcris_import.py#DOWNLOAD_URL"
+    },
+    {
+      "dimension": "data",
+      "value": "A single CMS HCRIS fiscal-year download bundles cost reports by when CMS processed them, not by each report's own period end date -- a report inside HOSP10FY2024.ZIP can have a fy_end_dt in 2025.",
+      "evidence": "pipeline/hcris_import.py#fiscal_year_of; pipeline/test_hcris_import.py#test_fiscal_year_comes_from_the_reports_own_end_date_not_the_download_bucket"
+    },
+    {
+      "dimension": "data",
+      "value": "A single hospital can have more than one cost report with fiscal years that resolve to the same calendar year (e.g. an original submission and a later amended resubmission), so import logic must deterministically choose one rather than assume uniqueness.",
+      "evidence": "pipeline/hcris_import.py#dedupe_by_provider_year; pipeline/test_hcris_import.py#test_two_reports_for_the_same_real_fiscal_year_keep_only_the_higher_rpt_rec_num"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "State filtering uses the CMS Certification Number's own prefix (e.g. Oklahoma = 37, 90; Texas = 45, 67, 74, 97, A9) rather than looking up the state via a separate worksheet field.",
+      "rationale": "the CCN prefix is a stable, well-documented CMS convention and avoids an extra per-report worksheet lookup for a value already encoded in the identifier",
+      "evidence": "pipeline/hcris_import.py#STATE_CCN_PREFIXES"
+    },
+    {
+      "statement": "Every worksheet/line/column code used (cash, accounts receivable, net patient revenue, total operating expense, net income from patients, the rural/urban flag) was confirmed against a real downloaded report (RPT_REC_NUM 795252, an Oklahoma hospital) before being trusted, not taken from documentation alone.",
+      "rationale": "a wrong worksheet/line reference would silently produce a plausible-looking but incorrect financial number, which this project's whole design exists to prevent",
+      "evidence": "pipeline/hcris_import.py#NUMERIC_FIELDS, #ALPHA_FIELDS"
+    },
+    {
+      "statement": "DuckDB pivot results are materialized into real temp tables (CREATE TEMP TABLE), not left as lazy relations referencing a registered view name.",
+      "rationale": "a lazy relation resolves a registered Python-object view name at execution time, not at query-construction time; reusing one view name ('kv') for two sequential pivots caused the first pivot to silently read the second file's data once both were finally fetched -- this returned zero results with no error, discovered only by checking a known real hospital's data by hand",
+      "evidence": "pipeline/hcris_import.py#pivot (see the comment on CREATE OR REPLACE TEMP TABLE)"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Only fiscal year 2024 has been imported so far, not the three years the broader plan calls for.",
+      "evidence": "PROGRESS.md STORY-001 entry"
+    },
+    {
+      "statement": "Missing values are stored as NULL (never guessed as zero or a default), but there is no separate column recording *why* a value is missing.",
+      "evidence": "pipeline/schema.sql (cost_report_years columns)"
+    },
+    {
+      "statement": "The RPT flat file's 18-column layout is reconstructed from the standard documented HCRIS convention plus matching a real sample row, not from a single official field-by-field CMS specification document located during this story.",
+      "evidence": "pipeline/hcris_import.py (extract_metrics, the rpt read_csv columns mapping)"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_hcris_import.py (12 tests: state-prefix filtering for every claimed OK/TX prefix, fiscal-year derivation from the report's own end date, deterministic dedup on genuine same-year collisions, and the invalid-format failure path)"
+    }
+  ],
+  "measurementEvents": []
+}

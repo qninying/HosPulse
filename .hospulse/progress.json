@@ -4,40 +4,19 @@
   "totals": {
     "stories_total": 13,
     "stories_verified": 0,
-    "stories_submitted": 1,
-    "stories_in_progress": 0,
+    "stories_submitted": 0,
+    "stories_in_progress": 1,
     "stories_not_started": 12,
-    "criteria_total": 54,
-    "criteria_passed": 5,
+    "criteria_total": 49,
+    "criteria_passed": 1,
     "points_awarded": 0
   },
   "stories": [
     {
       "id": "STORY-000",
       "release": null,
-      "acceptance_total": 5,
-      "criteria": [
-        {
-          "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
-          "passed": true
-        },
-        {
-          "text": "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
-          "passed": true
-        },
-        {
-          "text": "Given the Command Center, when any tab renders, then .hospulse/plan.json and .hospulse/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
-          "passed": true
-        },
-        {
-          "text": "Given the Command Center, when any tab is shown, then .hospulse/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
-          "passed": true
-        },
-        {
-          "text": "Trust: no tab shows a number, a connection or a result the project has not actually produced.",
-          "passed": true
-        }
-      ],
+      "acceptance_total": 0,
+      "criteria": [],
       "files_touched": [
         "command-center/index.html",
         "command-center/outcomes.html",
@@ -58,13 +37,13 @@
       "notes": "All 9 tabs render in sample and real mode (17 pages x 2 modes checked in the browser). .hospulse/plan.json, progress.json and manifest.json committed in aec0d10.",
       "updated_at": null,
       "verification": {
-        "state": "submitted",
-        "criteria_passed": 5,
-        "criteria_total": 5,
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
+        "commit_at": "2026-09-22T15:49:43-05:00",
         "points_awarded": null,
         "outstanding": []
       }
@@ -80,7 +59,7 @@
         },
         {
           "text": "Given the importer has already run, When it runs again on the same files, Then the database holds exactly the same rows with no duplicates.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.",
@@ -91,13 +70,20 @@
           "passed": false
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
+      "files_touched": [
+        "pipeline/schema.sql",
+        "pipeline/hcris_import.py",
+        "pipeline/test_hcris_import.py",
+        "requirements.txt"
+      ],
+      "tests_added": [
+        "pipeline/test_hcris_import.py (12 tests)"
+      ],
+      "notes": "Genuinely partial against this stricter plan's own criteria, on purpose -- not rounding up: only FY2024 imported, not the latest three years. Missing metrics are stored as NULL (never guessed as zero) but with no explicit 'reason' text column. Provenance is recorded per row as source_rpt_rec_num + source_file, but the specific worksheet/line/column per metric lives in code (pipeline/hcris_import.py's NUMERIC_FIELDS), not duplicated onto every row -- a deliberate simplification, not yet revisited. Idempotency is verified: identical content hash across two runs from a clean state.",
       "updated_at": null,
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "in_progress",
+        "criteria_passed": 1,
         "criteria_total": 4,
         "verified_at": null,
         "commit_sha": null,
@@ -106,7 +92,6 @@
         "points_awarded": null,
         "outstanding": [
           "Given the latest three years of CMS HCRIS files, When the importer runs, Then every rural and Critical Access Hospital in Oklahoma and Texas has a yearly row with operating margin, days cash on hand and days in A/R.",
-          "Given the importer has already run, When it runs again on the same files, Then the database holds exactly the same rows with no duplicates.",
           "Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.",
           "Trust: Every stored metric records the cost report ID, worksheet and line it was computed from."
         ]
@@ -534,9 +519,9 @@
         "criteria_passed": 0,
         "criteria_total": 5,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
+        "commit_at": "2026-09-22T15:49:43-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",

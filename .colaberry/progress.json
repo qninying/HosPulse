@@ -68,21 +68,28 @@
       "criteria": [
         {
           "text": "Given CMS HCRIS data is available, When the import process runs, Then the data is imported and metrics are computed.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given invalid data format, When the import process runs, Then the data is rejected with an error message.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Every imported data point is traceable to its source file and row.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "pipeline/schema.sql",
+        "pipeline/hcris_import.py",
+        "pipeline/test_hcris_import.py",
+        "requirements.txt"
+      ],
+      "tests_added": [
+        "pipeline/test_hcris_import.py (12 tests: state-prefix filtering, fiscal-year derivation from fy_end_dt not the download bucket, deterministic dedup tie-break, and the invalid-format failure path)"
+      ],
+      "notes": "Real data: 256 OK/TX rural/CAH hospitals, 260 cost-report-years, live in Supabase, verified idempotent (identical content hash across two runs from a clean state). Every worksheet/line/column code cited against the CMS data dictionary and confirmed against a real downloaded report before being trusted. Two real bugs found by checking my own output rather than trusting the first run: a DuckDB lazy-evaluation bug (fixed by materializing pivots into real temp tables instead of reusing a shared view name) and a fiscal-year mislabeling bug (CMS's FY2024 download bucket is when CMS processed a report, not each report's own period end -- fixed by deriving fiscal_year from fy_end_dt). Only FY2024 has been run so far; STORY-002 (early-warning flags) and expanding to 3 years remain.",
+      "updated_at": "2026-09-22T22:10:00Z",
       "verification": {
         "state": "not_started",
         "criteria_passed": 0,

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-22T20:35:35Z",
+  "generated_at": "2026-09-22T21:54:04Z",
   "plan_version": 1,
   "files": [
     {
@@ -8,7 +8,7 @@
     },
     {
       "path": ".hospulse/progress.json",
-      "sha256": "927fa7f9e7a0e21fe9bfa7e90a189c4d4f2d7f8499ae0077f081e3d263f66851"
+      "sha256": "7ad67e739ad26711fc5be4e4abfc5d06b44c8d8a6293c4d049cbb4e56138dd04"
     },
     {
       "path": "docs/REQUIREMENTS.md",
@@ -24,11 +24,11 @@
     },
     {
       "path": "docs/stories/STORY-000.md",
-      "sha256": "4e2540532fbd4513655672398763dcc1df4442dab78d3105af93a413a8def5f2"
+      "sha256": "f3d8f9f5211f0125d73c767bf5a3c85c6a3edaa105b9965cfd1cb124f6bded96"
     },
     {
       "path": "docs/stories/STORY-001.md",
-      "sha256": "248f61ee8d8096f1aac3da8da8b52d66791612bbd112a6eb6ff96bd835212632"
+      "sha256": "a1f22e29909ed88412b8d28673ff2075b8bee1725841eb0552a51993e02a7013"
     },
     {
       "path": "docs/stories/STORY-002.md",

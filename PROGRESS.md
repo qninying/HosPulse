@@ -34,9 +34,17 @@
   - Verification: `node --check` clean on all JS (shared file + every inline script block); every `plan.X`/`progress.X` field referenced in the codebase traced against the real committed JSON; `ownersFromPlan`/`verificationForRequirement` run in Node against the real data, output matched the portal's hand-specified owner breakdown exactly; all 9 tabs + root redirect + 3 data files returned HTTP 200 from a local server
   - Notes: no live browser available this session to visually confirm rendering; verification was static (syntax, field trace, logic replay), not an observed render. `.hospulse/plan.json` and its generated `docs/` remain as a separate, still-valid build plan; the Command Center no longer reads them.
 
+- [x] STORY-001: import CMS HCRIS data into real Supabase Postgres
+  - Date: 2026-09-22
+  - What changed: Supabase project created (`hospulse`, us-east-2), automatic-RLS-on-new-tables event trigger enabled; `pipeline/schema.sql` (`hospitals`, `cost_report_years`, generated `operating_margin_pct`/`days_cash_on_hand`/`days_in_ar` columns, public-read RLS policies); `pipeline/hcris_import.py` (downloads the real CMS HCRIS zip, filters to OK/TX rural and Critical Access Hospitals, computes the 3 metrics, idempotent upsert); `pipeline/test_hcris_import.py` (12 tests); `requirements.txt` (psycopg2-binary, duckdb, python-dotenv); `.colaberry/enrichment/STORY-001.json`
+  - Verification: real run against live Supabase -- 256 OK/TX rural/CAH hospitals, 260 cost-report-years for FY2024; re-run from a clean state produced an identical content hash (genuine idempotency, not just "no crash"); `pytest pipeline/test_hcris_import.py -v` 12/12 passed, including the invalid-format failure path; every worksheet/line/column code confirmed against a real downloaded report (RPT_REC_NUM 795252) before being trusted, not taken from documentation alone
+  - Notes: two real bugs found and fixed while verifying, not left in: (1) DuckDB lazy-evaluation bug -- reusing one registered view name ("kv") for two sequential pivots caused the first to silently read the second file's data, returning 0 results with no error; fixed by materializing into real temp tables. (2) Fiscal-year mislabeling -- CMS's HOSP10FY2024.ZIP bundles reports by when CMS processed them, not each report's own period end, so a report ending 06/30/2025 was being stored as fiscal_year=2024; fixed by deriving fiscal_year from the report's own fy_end_dt, plus a deterministic dedup tie-break for genuine same-year duplicates (highest RPT_REC_NUM wins). `.colaberry/progress.json` STORY-001 ticked 3/3 (genuinely earned). `.hospulse/progress.json` STORY-001 ticked honestly at 1/4 against its own stricter criteria -- only FY2024 imported (not 3 years), no explicit "reason" column for missing values, worksheet/line provenance lives in code not per-row in the database. Both are real, neither rounded up.
+
 ## Next
 
 - [ ] Coffee with prospect #1 (4 validation checks: pain, data access, budget owner, existing tools)
+- [ ] Expand HCRIS import to 3 fiscal years (currently only FY2024)
+- [ ] STORY-002: early-warning flags on top of the imported metrics
 - [ ] Health Snapshot v0 from public CMS HCRIS cost report data (OK + TX rural hospitals)
 - [ ] LinkedIn Post 1 (RHTP / visibility problem)
 - [ ] Build STORY-011 / STORY-003 for real and wire them to call `pipeline/grounding_guardrail.validate_ai_output_is_grounded`
