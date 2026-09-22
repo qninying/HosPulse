@@ -345,6 +345,15 @@ def upsert(rows: list[HospitalYear], database_url: str) -> None:
                     source_rpt_rec_num = EXCLUDED.source_rpt_rec_num,
                     source_file = EXCLUDED.source_file,
                     imported_at = now()
+                -- Order-independent across separate runs, not just within
+                -- one: dedupe_by_provider_year() only protects duplicates
+                -- found inside a single run's own batch. Without this
+                -- guard, re-running an older fiscal-year file after a
+                -- newer one already supplied a better record for the same
+                -- (provider, year) would silently regress that row back
+                -- to the older report. A higher RPT_REC_NUM was always
+                -- received later by CMS, so only ever move forward.
+                WHERE EXCLUDED.source_rpt_rec_num >= cost_report_years.source_rpt_rec_num
                 """,
                 [
                     (
