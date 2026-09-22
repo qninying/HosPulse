@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse Project Management</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+<style>
+  .cc-gantt-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 12px; gap: 12px; }
+  .cc-gantt-label { width: 260px; flex-shrink: 0; color: var(--cc-muted); }
+  .cc-gantt-track { flex: 1; background: var(--cc-panel-2); border-radius: 4px; height: 20px; position: relative; min-width: 160px; }
+  .cc-gantt-bar { position: absolute; top: 0; height: 100%; border-radius: 4px; background: var(--cc-accent); }
+  .cc-gantt-bar.cc-gantt-demo { background: var(--cc-warn); }
+  .cc-gantt-today { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--cc-danger); }
+  @media (max-width: 700px) { .cc-gantt-label { width: 120px; } }
+</style>
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+  <main>
+    <h1 class="cc-page-title">Project Management</h1>
+    <p class="cc-page-desc">Releases, every story with its baseline and current due date, and the customer validation tasks that run alongside the build.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, getParam, statusDot, sampleBadge, storyState } = CommandCenter;
+
+    // Sample overlay only, consistent with the Overview's sample headline.
+    const SAMPLE_STATES = {
+      "STORY-000": "verified", "STORY-001": "verified", "STORY-002": "verified", "STORY-003": "verified",
+      "STORY-004": "in_progress",
+    };
+
+    function displayState(progress, id, mode) {
+      return mode === "sample" ? (SAMPLE_STATES[id] || "not_started") : storyState(progress, id);
+    }
+
+    function pct(dateStr, start, end) {
+      const d = new Date(dateStr).getTime(), s = new Date(start).getTime(), e = new Date(end).getTime();
+      return Math.max(0, Math.min(100, ((d - s) / (e - s)) * 100));
+    }
+
+    function renderGantt(plan) {
+      const sch = plan.schedule;
+      const end = [sch.build_end, sch.demo_day].filter(Boolean).sort().pop();
+      const rows = (plan.releases || []).map((r) => {
+        const left = pct(r.starts_on, sch.build_start, end);
+        const width = Math.max(1, pct(r.ends_on, sch.build_start, end) - left);
+        return `<div class="cc-gantt-row">
+          <div class="cc-gantt-label">${esc(r.key.toUpperCase())} · ${esc(r.name)}</div>
+          <div class="cc-gantt-track"><div class="cc-gantt-bar${r.is_demo_target ? " cc-gantt-demo" : ""}" style="left:${left}%; width:${width}%;" title="${esc(r.starts_on)} to ${esc(r.ends_on)}"></div></div>
+        </div>`;
+      }).join("");
+      const today = new Date().toISOString().slice(0, 10);
+      const todayMark = today >= sch.build_start && today <= end
+        ? `<div class="cc-gantt-today" style="left:${pct(today, sch.build_start, end)}%;" title="Today"></div>` : "";
+      return `
+        <div class="cc-panel-box">
+          <h3 style="margin-top:0;">Releases</h3>
+          ${rows}
+          <div class="cc-gantt-row">
+            <div class="cc-gantt-label" style="font-weight:600;">First demo (${esc(sch.demo_day)})</div>
+            <div class="cc-gantt-track"><div class="cc-gantt-bar cc-gantt-demo" style="left:${pct(sch.demo_day, sch.build_start, end)}%; width:1.5%;"></div>${todayMark}</div>
+          </div>
+          <p style="color:var(--cc-muted); font-size:12px; margin:12px 0 0;">
+            Build ${esc(sch.build_start)} to ${esc(sch.build_end)} · amber is the demo release · red line is today
+          </p>
+        </div>`;
+    }
+
+    function renderPrep(plan) {
+      const prep = plan.schedule.prep || [];
+      if (prep.length === 0) return "";
+      return `
+        <div class="cc-panel-box" id="prep">
+          <h3 style="margin-top:0;">Customer validation tasks</h3>
+          <p style="color:var(--cc-muted); font-size:13px; margin-top:0;">Planned alongside the build. The plan holds due dates only; whether each happened is tracked in PROGRESS.md.</p>
+          <div class="cc-table-wrap"><table class="cc-table"><thead><tr><th>Key</th><th>Task</th><th>Due</th></tr></thead><tbody>
+          ${prep.map((p) => `<tr><td>${esc(p.key)}</td><td>${esc(p.title)}</td><td>${esc(p.due_on)}</td></tr>`).join("")}
+          </tbody></table></div>
+        </div>`;
+    }
+
+    function renderList({ plan, progress, mode }) {
+      const el = document.getElementById("cc-content");
+      const story000 = { id: "STORY-000", title: "Build the Command Center", release: "pre", due_on: plan.schedule.build_start, due_baseline_on: plan.schedule.build_start };
+      const rows = [story000, ...(plan.stories || [])].map((s) => {
+        const state = displayState(progress, s.id, mode);
+        const slipped = s.due_on !== s.due_baseline_on;
+        return `<tr>
+          <td><a href="project-management.html?id=${encodeURIComponent(s.id)}">${esc(s.id)}</a></td>
+          <td>${esc(s.title)}</td>
+          <td>${esc(s.release.toUpperCase())}</td>
+          <td>${esc(s.due_baseline_on)}</td>
+          <td>${esc(s.due_on)}${slipped ? ' <span class="cc-tag cc-tag-should">slipped</span>' : ""}</td>
+          <td>${statusDot(state)}${esc(state)}</td>
+        </tr>`;
+      }).join("");
+      el.innerHTML = renderGantt(plan) + `
+        <div class="cc-panel-box">
+          <h3 style="margin-top:0;">Stories${sampleBadge()}</h3>
+          <div class="cc-table-wrap"><table class="cc-table">
+            <thead><tr><th>ID</th><th>Title</th><th>Release</th><th>Due (baseline)</th><th>Due (current)</th><th>Status</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>
+        </div>` + renderPrep(plan);
+      if (location.hash === "#prep") document.getElementById("prep")?.scrollIntoView();
+    }
+
+    function renderDetail({ plan, progress, mode }, id) {
+      const el = document.getElementById("cc-content");
+      const p = ((progress && progress.stories) || []).find((x) => x.id === id);
+      const s = id === "STORY-000"
+        ? { id, title: "Build the Command Center", release: "pre", narrative: "As a HosPulse Founder, I want one place that shows what we are building and how far along it is, so that I can see the whole project and demo from it.", acceptance: p ? p.criteria.map((c) => c.text) : [], fulfills: [], failure_paths: [], blocked_by: [], due_on: plan.schedule.build_start, due_baseline_on: plan.schedule.build_start, owner_agent: "Founder with Claude Code" }
+        : (plan.stories || []).find((x) => x.id === id);
+      if (!s) {
+        el.innerHTML = `<p class="cc-back"><a href="project-management.html">&larr; Project Management</a></p><div class="cc-empty-state">No story "${esc(id)}" in the plan.</div>`;
+        return;
+      }
+      const state = displayState(progress, s.id, mode);
+      const ticks = mode === "sample" ? null : Object.fromEntries(((p && p.criteria) || []).map((c) => [c.text, c.passed]));
+      const v = p && p.verification;
+      el.innerHTML = `
+        <p class="cc-back"><a href="project-management.html">&larr; Project Management</a></p>
+        <div class="cc-panel-box">
+          <p class="cc-kicker">${esc(s.id)} · ${esc(s.release.toUpperCase())} · owner ${esc(s.owner_agent)}${sampleBadge()}</p>
+          <h3 style="margin:0 0 10px;">${esc(s.title)}</h3>
+          <p style="color:var(--cc-muted); font-size:13px;">${esc(s.narrative)}</p>
+          <p>${statusDot(state)}<strong>${esc(state)}</strong>
+            ${mode !== "sample" && v && v.commit_url ? ` · <a href="${esc(v.commit_url)}">commit ${esc(v.commit_sha.slice(0, 7))}</a>` : ""}</p>
+          <p style="font-size:13px;">Due ${esc(s.due_on)} (baseline ${esc(s.due_baseline_on)})${s.blocked_by.length ? ` · waits on ${s.blocked_by.map((b) => `<a href="project-management.html?id=${encodeURIComponent(b)}">${esc(b)}</a>`).join(", ")}` : ""}</p>
+          ${s.fulfills.length ? `<p style="font-size:13px;"><strong>Fulfils:</strong> ${s.fulfills.map((r) => `<a href="knowledge-base.html#${esc(r)}">${esc(r)}</a>`).join(", ")}</p>` : ""}
+          <p style="font-size:13px; margin-bottom:4px;"><strong>Acceptance criteria</strong>${mode === "sample" ? " (ticks hidden in sample mode)" : ""}</p>
+          <ul style="font-size:13px; margin-top:0;">${s.acceptance.map((c) => `<li>${ticks ? (ticks[c] ? "&#9989; " : "&#11036; ") : ""}${esc(c)}</li>`).join("")}</ul>
+          ${s.failure_paths.length ? `<p style="font-size:13px; margin-bottom:4px;"><strong>Failure paths</strong></p><ul style="font-size:13px; margin-top:0;">${s.failure_paths.map((f) => `<li>${esc(f)}</li>`).join("")}</ul>` : ""}
+          ${s.task_guidance ? `<p style="font-size:13px;"><strong>How to build it:</strong> ${esc(s.task_guidance)}</p>` : ""}
+        </div>
+      `;
+    }
+
+    CommandCenter.init("project-management", (data) => {
+      const id = getParam("id");
+      if (id) renderDetail(data, id); else renderList(data);
+    });
+  })();
+  </script>
+</body>
+</html>

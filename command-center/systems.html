@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse Systems</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+  <main>
+    <h1 class="cc-page-title">Systems</h1>
+    <p class="cc-page-desc">What HosPulse connects to. The plan only knows the names. Whether a connection is live is a fact about the running system, so real mode shows every indicator grey.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, getParam, sampleBadge } = CommandCenter;
+
+    // Sample overlay only. Real mode is always grey, "not checked from here".
+    const SAMPLE_STATUS = {
+      "CMS HCRIS": { cls: "cc-dot-ok", label: "last import succeeded", checked: "3 days ago" },
+      "Supabase": { cls: "cc-dot-ok", label: "connected", checked: "2 minutes ago" },
+      "Vercel": { cls: "cc-dot-ok", label: "deployed", checked: "1 hour ago" },
+      "Anthropic Claude API": { cls: "cc-dot-ok", label: "responding", checked: "2 minutes ago" },
+      "Resend": { cls: "cc-dot-error", label: "error: rate limited", checked: "20 minutes ago" },
+    };
+
+    function status(name, mode) {
+      if (mode !== "sample") return { cls: "", label: "not checked from here", checked: "never" };
+      return SAMPLE_STATUS[name] || { cls: "", label: "not checked from here", checked: "never" };
+    }
+
+    function constraintFor(plan, name) {
+      return (plan.requirements || []).find((r) => r.kind === "CONSTRAINT" && (r.systems || []).includes(name));
+    }
+
+    function renderList({ plan, mode }) {
+      const el = document.getElementById("cc-content");
+      const systems = (plan.derived && plan.derived.systems) || [];
+      if (systems.length === 0) {
+        el.innerHTML = `<div class="cc-empty-state">No systems named by a CONSTRAINT requirement in the plan.</div>`;
+        return;
+      }
+      el.innerHTML = `<div class="cc-grid">` + systems.map((sys) => {
+        const s = status(sys, mode);
+        return `<a class="cc-card" href="systems.html?id=${encodeURIComponent(sys)}">
+          <h3><span class="cc-dot ${s.cls}"></span>${esc(sys)}${sampleBadge()}</h3>
+          <p>${esc(s.label)} · checked ${esc(s.checked)}</p></a>`;
+      }).join("") + `</div>`;
+    }
+
+    function renderDetail({ plan, mode }, id) {
+      const el = document.getElementById("cc-content");
+      const systems = (plan.derived && plan.derived.systems) || [];
+      if (!systems.includes(id)) {
+        el.innerHTML = `<p class="cc-back"><a href="systems.html">&larr; Systems</a></p><div class="cc-empty-state">No system "${esc(id)}" in the plan.</div>`;
+        return;
+      }
+      const s = status(id, mode);
+      const req = constraintFor(plan, id);
+      el.innerHTML = `
+        <p class="cc-back"><a href="systems.html">&larr; Systems</a></p>
+        <div class="cc-panel-box">
+          <h3 style="margin-top:0;"><span class="cc-dot ${s.cls}"></span>${esc(id)}${sampleBadge()}</h3>
+          <p><strong>Status:</strong> ${esc(s.label)}</p>
+          <p><strong>Last checked:</strong> ${esc(s.checked)}</p>
+          ${req ? `<p style="font-size:13px;"><strong>Named by:</strong> <a href="knowledge-base.html#${esc(req.id)}">${esc(req.id)}</a>: ${esc(req.statement)}</p>` : ""}
+          <p style="color:var(--cc-muted); font-size:13px;">This page only knows the system was named in the plan. A green dot here before the system reports a real check would be a claim nobody made.</p>
+        </div>
+      `;
+    }
+
+    CommandCenter.init("systems", (data) => {
+      const id = getParam("id");
+      if (id) renderDetail(data, id); else renderList(data);
+    });
+  })();
+  </script>
+</body>
+</html>

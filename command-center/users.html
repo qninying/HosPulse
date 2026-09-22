@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse Users</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+  <main>
+    <h1 class="cc-page-title">Users &amp; Use Case</h1>
+    <p class="cc-page-desc">Who HosPulse is for and what they are trying to get done, taken from the "As a &lt;role&gt;" line of each story.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, getParam } = CommandCenter;
+
+    function storiesForRole(plan, role) {
+      return (plan.stories || []).filter((s) => /^As an? (.+?), I want/.test(s.narrative || "")
+        && s.narrative.match(/^As an? (.+?), I want/)[1] === role);
+    }
+
+    function renderList({ plan }) {
+      const el = document.getElementById("cc-content");
+      const roles = (plan.derived && plan.derived.roles) || [];
+      if (roles.length === 0) {
+        el.innerHTML = `<div class="cc-empty-state">No roles found. Story narratives need an "As a &lt;role&gt;, I want" opening.</div>`;
+        return;
+      }
+      el.innerHTML = `<div class="cc-grid">` + roles.map((role) => {
+        const n = storiesForRole(plan, role).length;
+        return `<a class="cc-card" href="users.html?id=${encodeURIComponent(role)}"><h3>${esc(role)}</h3><p>${n} ${n === 1 ? "story" : "stories"}</p></a>`;
+      }).join("") + `</div>`;
+    }
+
+    function renderDetail({ plan }, role) {
+      const el = document.getElementById("cc-content");
+      const stories = storiesForRole(plan, role);
+      el.innerHTML = `
+        <p class="cc-back"><a href="users.html">&larr; Users &amp; Use Case</a></p>
+        <div class="cc-panel-box">
+          <h3 style="margin-top:0;">${esc(role)}</h3>
+          ${stories.length === 0
+            ? `<p style="color:var(--cc-muted);">No story in the plan is written for this role.</p>`
+            : stories.map((s) => `
+                <p style="margin:0 0 14px;">
+                  <a href="project-management.html?id=${encodeURIComponent(s.id)}"><strong>${esc(s.id)}</strong></a>: ${esc(s.title)}<br/>
+                  <span style="color:var(--cc-muted); font-size:13px;">${esc(s.narrative)}</span>
+                </p>`).join("")}
+        </div>
+      `;
+    }
+
+    CommandCenter.init("users", (data) => {
+      const id = getParam("id");
+      if (id) renderDetail(data, id); else renderList(data);
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse Command Center</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+
+  <main>
+    <h1 class="cc-page-title">Overview</h1>
+    <p class="cc-page-desc">The thirty-second view: what HosPulse does, which release we are in, and what is actually verified versus not built yet.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, sampleBadge, verificationForRequirement } = CommandCenter;
+
+    function currentRelease(plan) {
+      const today = new Date();
+      const releases = plan.releases || [];
+      return releases.find((r) => today >= new Date(r.starts_on) && today <= new Date(r.ends_on + "T23:59:59"))
+        || (today < new Date(plan.schedule.build_start) ? releases[0] : releases[releases.length - 1]);
+    }
+
+    function nextPrep(plan) {
+      const today = new Date().toISOString().slice(0, 10);
+      return (plan.schedule.prep || []).find((p) => p.due_on >= today) || null;
+    }
+
+    CommandCenter.init("overview", ({ plan, progress, mode }) => {
+      const el = document.getElementById("cc-content");
+      const badge = sampleBadge();
+      const totals = (progress && progress.totals) || null;
+      const reqs = plan.requirements || [];
+
+      // Real mode reads progress.totals as-is. Sample mode overlays a plausible
+      // mid-build picture and labels every card that uses it.
+      const t = mode === "sample"
+        ? { stories_verified: 4, stories_total: (plan.stories || []).length + 1, criteria_passed: 17, criteria_total: totals ? totals.criteria_total : 0 }
+        : totals;
+      const reqsBuilt = mode === "sample"
+        ? 5
+        : reqs.filter((r) => verificationForRequirement(plan, progress, r).state === "enforced").length;
+
+      const rel = currentRelease(plan);
+      const prep = nextPrep(plan);
+
+      el.innerHTML = `
+        <div class="cc-panel-box">
+          <p class="cc-kicker">${esc(plan.project.name)}</p>
+          <p style="margin:0; font-size:15px;">${esc(plan.project.descriptor)}</p>
+        </div>
+        <div class="cc-grid">
+          <a class="cc-card" href="project-management.html">
+            <h3>Current release</h3>
+            <p class="cc-card-value">${esc(rel.key.toUpperCase())}</p>
+            <p>${esc(rel.name)} · ${esc(rel.starts_on)} to ${esc(rel.ends_on)}</p>
+          </a>
+          <a class="cc-card" href="project-management.html">
+            <h3>Stories verified${badge}</h3>
+            ${t ? `<p class="cc-card-value">${t.stories_verified} of ${t.stories_total}</p>
+            <p>Including STORY-000, the Command Center</p>`
+              : `<p class="cc-card-value" style="color:var(--cc-muted)">Not checked yet</p><p>.hospulse/progress.json is missing</p>`}
+          </a>
+          <a class="cc-card" href="project-management.html">
+            <h3>Criteria passed${badge}</h3>
+            ${t ? `<p class="cc-card-value">${t.criteria_passed} of ${t.criteria_total}</p>
+            <p>Acceptance criteria genuinely met</p>`
+              : `<p class="cc-card-value" style="color:var(--cc-muted)">Not checked yet</p><p>.hospulse/progress.json is missing</p>`}
+          </a>
+          <a class="cc-card" href="knowledge-base.html">
+            <h3>Requirements built${badge}</h3>
+            <p class="cc-card-value">${reqsBuilt} of ${reqs.length}</p>
+            <p>Every fulfilling story verified</p>
+          </a>
+        </div>
+        <div class="cc-grid">
+          <a class="cc-card" href="project-management.html#prep">
+            <h3>Next validation task</h3>
+            ${prep ? `<p style="color:var(--cc-text); font-size:14px; margin:6px 0;">${esc(prep.title)}</p><p>Due ${esc(prep.due_on)}</p>`
+              : `<p>No upcoming validation tasks in the plan.</p>`}
+          </a>
+          <a class="cc-card" href="project-management.html">
+            <h3>Build window</h3>
+            <p style="color:var(--cc-text); font-size:14px; margin:6px 0;">${esc(plan.schedule.build_start)} to ${esc(plan.schedule.build_end)}</p>
+            <p>First demo ${esc(plan.schedule.demo_day)} (release ${esc((plan.schedule.demo_release_key || "").toUpperCase())})</p>
+          </a>
+        </div>
+      `;
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,589 @@
+{
+  "schema_version": 2,
+  "project": "HosPulse",
+  "totals": {
+    "stories_total": 13,
+    "stories_verified": 1,
+    "stories_submitted": 0,
+    "stories_in_progress": 0,
+    "stories_not_started": 12,
+    "criteria_total": 53,
+    "criteria_passed": 5,
+    "points_awarded": 0
+  },
+  "stories": [
+    {
+      "id": "STORY-000",
+      "release": null,
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
+          "passed": true
+        },
+        {
+          "text": "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
+          "passed": true
+        },
+        {
+          "text": "Given the Command Center, when any tab renders, then .hospulse/plan.json and .hospulse/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
+          "passed": true
+        },
+        {
+          "text": "Given the Command Center, when any tab is shown, then .hospulse/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
+          "passed": true
+        },
+        {
+          "text": "Trust: no tab shows a number, a connection or a result the project has not actually produced.",
+          "passed": true
+        }
+      ],
+      "files_touched": [
+        "command-center/index.html",
+        "command-center/outcomes.html",
+        "command-center/users.html",
+        "command-center/guardrails.html",
+        "command-center/systems.html",
+        "command-center/project-management.html",
+        "command-center/agents.html",
+        "command-center/knowledge-base.html",
+        "command-center/data-model.html",
+        "command-center/assets/command-center.js",
+        "command-center/assets/command-center.css",
+        "scripts/build_plan.py"
+      ],
+      "tests_added": [
+        "scripts/test_build_plan.py"
+      ],
+      "notes": "All 9 tabs render in sample and real mode (17 pages x 2 modes checked in the browser). .hospulse/plan.json, progress.json and manifest.json committed in aec0d10.",
+      "updated_at": null,
+      "verification": {
+        "state": "verified",
+        "criteria_passed": 5,
+        "criteria_total": 5,
+        "verified_at": "2026-09-22T15:15:54-05:00",
+        "commit_sha": "f412d561c9ed6a3f3cbafafc138eee1b4e4ed651",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/f412d561c9ed6a3f3cbafafc138eee1b4e4ed651",
+        "commit_at": "2026-09-22T15:15:54-05:00",
+        "points_awarded": null,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-001",
+      "release": "r0",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given the latest three years of CMS HCRIS files, When the importer runs, Then every rural and Critical Access Hospital in Oklahoma and Texas has a yearly row with operating margin, days cash on hand and days in A/R.",
+          "passed": false
+        },
+        {
+          "text": "Given the importer has already run, When it runs again on the same files, Then the database holds exactly the same rows with no duplicates.",
+          "passed": false
+        },
+        {
+          "text": "Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every stored metric records the cost report ID, worksheet and line it was computed from.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given the latest three years of CMS HCRIS files, When the importer runs, Then every rural and Critical Access Hospital in Oklahoma and Texas has a yearly row with operating margin, days cash on hand and days in A/R.",
+          "Given the importer has already run, When it runs again on the same files, Then the database holds exactly the same rows with no duplicates.",
+          "Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.",
+          "Trust: Every stored metric records the cost report ID, worksheet and line it was computed from."
+        ]
+      }
+    },
+    {
+      "id": "STORY-002",
+      "release": "r0",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a hospital with operating margin below 0%, days cash on hand below 30, or days in A/R rising two years in a row, When the engine runs, Then that hospital receives a flag naming the rule it tripped.",
+          "passed": false
+        },
+        {
+          "text": "Given a hospital whose metrics are missing, When the engine runs, Then it is marked as not assessable rather than stable.",
+          "passed": false
+        },
+        {
+          "text": "Given the engine has already run on the same data, When it runs again, Then no duplicate flags are created.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every flag stores the exact metric values and years that triggered it.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a hospital with operating margin below 0%, days cash on hand below 30, or days in A/R rising two years in a row, When the engine runs, Then that hospital receives a flag naming the rule it tripped.",
+          "Given a hospital whose metrics are missing, When the engine runs, Then it is marked as not assessable rather than stable.",
+          "Given the engine has already run on the same data, When it runs again, Then no duplicate flags are created.",
+          "Trust: Every flag stores the exact metric values and years that triggered it."
+        ]
+      }
+    },
+    {
+      "id": "STORY-003",
+      "release": "r0",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a list of hospitals, When the briefing script runs, Then Claude Sonnet 5 produces a one-page briefing covering every flagged hospital in the list.",
+          "passed": false
+        },
+        {
+          "text": "Given a briefing that contains a number not present in the engine's output, When the grounding check runs, Then the briefing is rejected and not saved.",
+          "passed": false
+        },
+        {
+          "text": "Given the Claude API times out or errors, When the script runs, Then it retries a capped number of times and then fails with a clear message, saving nothing partial.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every number in a saved briefing matches a stored metric or flag value.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a list of hospitals, When the briefing script runs, Then Claude Sonnet 5 produces a one-page briefing covering every flagged hospital in the list.",
+          "Given a briefing that contains a number not present in the engine's output, When the grounding check runs, Then the briefing is rejected and not saved.",
+          "Given the Claude API times out or errors, When the script runs, Then it retries a capped number of times and then fails with a clear message, saving nothing partial.",
+          "Trust: Every number in a saved briefing matches a stored metric or flag value."
+        ]
+      }
+    },
+    {
+      "id": "STORY-004",
+      "release": "r0",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a visitor on the snapshot page, When they search by hospital name or city, Then matching Oklahoma and Texas rural hospitals are listed.",
+          "passed": false
+        },
+        {
+          "text": "Given a hospital page, When it loads, Then it shows three years of operating margin, days cash on hand and days in A/R with any flags in plain words.",
+          "passed": false
+        },
+        {
+          "text": "Given a hospital with missing metrics, When its page loads, Then the missing values read 'not reported' rather than zero.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every figure on the page shows which cost report year it came from, and the page states that public data lags one to two years.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a visitor on the snapshot page, When they search by hospital name or city, Then matching Oklahoma and Texas rural hospitals are listed.",
+          "Given a hospital page, When it loads, Then it shows three years of operating margin, days cash on hand and days in A/R with any flags in plain words.",
+          "Given a hospital with missing metrics, When its page loads, Then the missing values read 'not reported' rather than zero.",
+          "Trust: Every figure on the page shows which cost report year it came from, and the page states that public data lags one to two years."
+        ]
+      }
+    },
+    {
+      "id": "STORY-005",
+      "release": "r1",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given five hospitals with published audited financials, When their snapshot metrics are compared, Then each metric is within 2 percentage points or 5 days of the published figure, or the difference is explained in writing.",
+          "passed": false
+        },
+        {
+          "text": "Given the check passes, When the site is deployed to Vercel, Then the public URL serves every hospital page.",
+          "passed": false
+        },
+        {
+          "text": "Given a deploy fails, When a previous version exists, Then the previous version stays live.",
+          "passed": false
+        },
+        {
+          "text": "Trust: No page shows a metric from a formula that failed the comparison check.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given five hospitals with published audited financials, When their snapshot metrics are compared, Then each metric is within 2 percentage points or 5 days of the published figure, or the difference is explained in writing.",
+          "Given the check passes, When the site is deployed to Vercel, Then the public URL serves every hospital page.",
+          "Given a deploy fails, When a previous version exists, Then the previous version stays live.",
+          "Trust: No page shows a metric from a formula that failed the comparison check."
+        ]
+      }
+    },
+    {
+      "id": "STORY-006",
+      "release": "r2",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given an operator from company A, When they sign in, Then they see only company A's hospitals.",
+          "passed": false
+        },
+        {
+          "text": "Given an operator from company A, When they request a company B hospital by ID or URL, Then the request is refused and nothing from company B is returned.",
+          "passed": false
+        },
+        {
+          "text": "Given a signed-out visitor, When they open any portal page, Then they are sent to sign in.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Company isolation is enforced by database row-level security, and a test proves a cross-company query returns zero rows.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given an operator from company A, When they sign in, Then they see only company A's hospitals.",
+          "Given an operator from company A, When they request a company B hospital by ID or URL, Then the request is refused and nothing from company B is returned.",
+          "Given a signed-out visitor, When they open any portal page, Then they are sent to sign in.",
+          "Trust: Company isolation is enforced by database row-level security, and a test proves a cross-company query returns zero rows."
+        ]
+      }
+    },
+    {
+      "id": "STORY-007",
+      "release": "r2",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a GL, A/R aging, denials summary or staffing export with only allowed columns, When an operator uploads it, Then the original file is stored privately and linked to the hospital and month.",
+          "passed": false
+        },
+        {
+          "text": "Given a file containing a column or value that looks like patient data (names, birth dates, record numbers), When it is uploaded, Then it is rejected before storage with a message saying why.",
+          "passed": false
+        },
+        {
+          "text": "Given the same file is uploaded twice, When the second upload arrives, Then it is recognized as a duplicate and not stored again.",
+          "passed": false
+        },
+        {
+          "text": "Trust: No rejected file, or any part of it, is ever written to storage or logs.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a GL, A/R aging, denials summary or staffing export with only allowed columns, When an operator uploads it, Then the original file is stored privately and linked to the hospital and month.",
+          "Given a file containing a column or value that looks like patient data (names, birth dates, record numbers), When it is uploaded, Then it is rejected before storage with a message saying why.",
+          "Given the same file is uploaded twice, When the second upload arrives, Then it is recognized as a duplicate and not stored again.",
+          "Trust: No rejected file, or any part of it, is ever written to storage or logs."
+        ]
+      }
+    },
+    {
+      "id": "STORY-008",
+      "release": "r3",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given exports from two different hospital systems for the same month, When they are normalized, Then both produce the same standard monthly metrics (cash, days in A/R, denial rate, open positions).",
+          "passed": false
+        },
+        {
+          "text": "Given an export in a format with no known mapping, When normalization runs, Then the file is marked 'needs mapping' and no metrics are guessed.",
+          "passed": false
+        },
+        {
+          "text": "Given normalization has already run for a file, When it runs again, Then the monthly metrics are unchanged and not duplicated.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every monthly metric links back to the stored file and row it came from.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given exports from two different hospital systems for the same month, When they are normalized, Then both produce the same standard monthly metrics (cash, days in A/R, denial rate, open positions).",
+          "Given an export in a format with no known mapping, When normalization runs, Then the file is marked 'needs mapping' and no metrics are guessed.",
+          "Given normalization has already run for a file, When it runs again, Then the monthly metrics are unchanged and not duplicated.",
+          "Trust: Every monthly metric links back to the stored file and row it came from."
+        ]
+      }
+    },
+    {
+      "id": "STORY-009",
+      "release": "r3",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given monthly metrics for a company's hospitals, When the operator opens the portal, Then every hospital is listed with status, days cash, days in A/R, margin and a 12-week trend.",
+          "passed": false
+        },
+        {
+          "text": "Given a flagged hospital, When the operator opens it, Then the flag, the rule and the triggering numbers are shown.",
+          "passed": false
+        },
+        {
+          "text": "Given a hospital with no uploads yet, When the dashboard loads, Then it shows 'no data yet' rather than a stable status.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Status colors come only from engine flags, never from the page's own calculations.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given monthly metrics for a company's hospitals, When the operator opens the portal, Then every hospital is listed with status, days cash, days in A/R, margin and a 12-week trend.",
+          "Given a flagged hospital, When the operator opens it, Then the flag, the rule and the triggering numbers are shown.",
+          "Given a hospital with no uploads yet, When the dashboard loads, Then it shows 'no data yet' rather than a stable status.",
+          "Trust: Status colors come only from engine flags, never from the page's own calculations."
+        ]
+      }
+    },
+    {
+      "id": "STORY-010",
+      "release": "r3",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.",
+          "passed": false
+        },
+        {
+          "text": "Given the run is triggered twice for the same week, When the second run happens, Then no operator receives a second email.",
+          "passed": false
+        },
+        {
+          "text": "Given the email service fails, When the run finishes, Then the briefing is still saved in the portal and the failure is logged with a retry.",
+          "passed": false
+        },
+        {
+          "text": "Trust: A company's briefing only ever goes to that company's operators.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.",
+          "Given the run is triggered twice for the same week, When the second run happens, Then no operator receives a second email.",
+          "Given the email service fails, When the run finishes, Then the briefing is still saved in the portal and the failure is logged with a retry.",
+          "Trust: A company's briefing only ever goes to that company's operators."
+        ]
+      }
+    },
+    {
+      "id": "STORY-011",
+      "release": "r4",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",
+          "passed": false
+        },
+        {
+          "text": "Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.",
+          "passed": false
+        },
+        {
+          "text": "Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every finding cites real cost report lines and ledger totals present in the input.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",
+          "Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.",
+          "Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.",
+          "Trust: Every finding cites real cost report lines and ledger totals present in the input."
+        ]
+      }
+    },
+    {
+      "id": "STORY-012",
+      "release": "r4",
+      "acceptance_total": 4,
+      "criteria": [
+        {
+          "text": "Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.",
+          "passed": false
+        },
+        {
+          "text": "Given a specialist confirms or rejects a finding, When they submit, Then the decision, their name and the time are recorded.",
+          "passed": false
+        },
+        {
+          "text": "Given a finding that has already been decided, When someone tries to decide it again, Then the original decision stands and the attempt is recorded.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every decision on a finding is kept in an append-only audit record.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 4,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.",
+          "Given a specialist confirms or rejects a finding, When they submit, Then the decision, their name and the time are recorded.",
+          "Given a finding that has already been decided, When someone tries to decide it again, Then the original decision stands and the attempt is recorded.",
+          "Trust: Every decision on a finding is kept in an append-only audit record."
+        ]
+      }
+    }
+  ]
+}

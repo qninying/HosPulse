@@ -1,0 +1,844 @@
+{
+  "schema_version": 2,
+  "project_name": "HosPulse",
+  "descriptor": "Early-warning intelligence for companies that manage rural hospitals: one view across every managed hospital, fixed and tested warning rules, and a plain-English weekly briefing, built without patient data.",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "kind": "FUNC",
+      "cluster": "Public Data",
+      "priority": "must",
+      "statement": "The system must import CMS HCRIS cost reports for rural and Critical Access Hospitals in Oklahoma and Texas and compute operating margin, days cash on hand and days in A/R per hospital per year.",
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-002",
+      "kind": "FUNC",
+      "cluster": "Public Data",
+      "priority": "must",
+      "statement": "The system must provide a public Health Snapshot where anyone can search for a rural hospital and see its metrics and three-year trend without an account.",
+      "fulfilled_by": [
+        "STORY-004",
+        "STORY-005"
+      ]
+    },
+    {
+      "id": "REQ-003",
+      "kind": "SAFE",
+      "cluster": "Trust",
+      "priority": "must",
+      "statement": "The system must make every displayed or briefed number traceable to the public cost report line or uploaded file row it came from.",
+      "fulfilled_by": [
+        "STORY-001",
+        "STORY-002",
+        "STORY-004",
+        "STORY-007"
+      ]
+    },
+    {
+      "id": "REQ-004",
+      "kind": "SAFE",
+      "cluster": "Trust",
+      "priority": "must",
+      "statement": "The system must reject any AI-written briefing that contains a number not present in the early-warning engine's output.",
+      "fulfilled_by": [
+        "STORY-003"
+      ]
+    },
+    {
+      "id": "REQ-005",
+      "kind": "FUNC",
+      "cluster": "Early Warning",
+      "priority": "must",
+      "statement": "The system must flag hospitals using fixed, tested rules and store the metric values that triggered each flag.",
+      "fulfilled_by": [
+        "STORY-002",
+        "STORY-009"
+      ]
+    },
+    {
+      "id": "REQ-006",
+      "kind": "FUNC",
+      "cluster": "Briefing",
+      "priority": "must",
+      "statement": "The system must produce a one-page plain-English hospitals-at-risk briefing for a chosen set of hospitals.",
+      "fulfilled_by": [
+        "STORY-003",
+        "STORY-010"
+      ]
+    },
+    {
+      "id": "REQ-007",
+      "kind": "REL",
+      "cluster": "Data Pipeline",
+      "priority": "must",
+      "statement": "The system must make every import, load and normalization run idempotent, so re-running it leaves the same data with no duplicates.",
+      "fulfilled_by": [
+        "STORY-001",
+        "STORY-007",
+        "STORY-008"
+      ]
+    },
+    {
+      "id": "REQ-008",
+      "kind": "SAFE",
+      "cluster": "Access Control",
+      "priority": "must",
+      "statement": "The system must require operators to sign in and must only ever show a management company the hospitals it manages.",
+      "fulfilled_by": [
+        "STORY-006"
+      ]
+    },
+    {
+      "id": "REQ-009",
+      "kind": "SAFE",
+      "cluster": "Access Control",
+      "priority": "must",
+      "statement": "The system must reject any upload that contains patient-identifying data before it is stored or logged.",
+      "fulfilled_by": [
+        "STORY-007"
+      ]
+    },
+    {
+      "id": "REQ-010",
+      "kind": "FUNC",
+      "cluster": "Customer Data",
+      "priority": "must",
+      "statement": "The system must let operators upload monthly GL, A/R aging, denials summary and staffing exports for each managed hospital.",
+      "fulfilled_by": [
+        "STORY-007"
+      ]
+    },
+    {
+      "id": "REQ-011",
+      "kind": "FUNC",
+      "cluster": "Customer Data",
+      "priority": "must",
+      "statement": "The system must convert exports from different hospital systems into one standard set of monthly metrics per hospital.",
+      "fulfilled_by": [
+        "STORY-008"
+      ]
+    },
+    {
+      "id": "REQ-012",
+      "kind": "FUNC",
+      "cluster": "Operator Portal",
+      "priority": "must",
+      "statement": "The system must show operators a dashboard of every managed hospital with its metrics, trends, flags and past briefings.",
+      "fulfilled_by": [
+        "STORY-009"
+      ]
+    },
+    {
+      "id": "REQ-013",
+      "kind": "FUNC",
+      "cluster": "Briefing",
+      "priority": "must",
+      "statement": "The system must run the analysis weekly and email each company's briefing to its operators.",
+      "fulfilled_by": [
+        "STORY-010"
+      ]
+    },
+    {
+      "id": "REQ-014",
+      "kind": "SAFE",
+      "cluster": "Cost Report Co-pilot",
+      "priority": "must",
+      "statement": "The system must hold every cost report co-pilot finding as unconfirmed until a human reimbursement specialist confirms or rejects it.",
+      "fulfilled_by": [
+        "STORY-012"
+      ]
+    },
+    {
+      "id": "REQ-015",
+      "kind": "FUNC",
+      "cluster": "Cost Report Co-pilot",
+      "priority": "should",
+      "statement": "The system must compare a hospital's cost report with its ledger totals and list possible missed reimbursement with the lines that support each item.",
+      "fulfilled_by": [
+        "STORY-011"
+      ]
+    },
+    {
+      "id": "REQ-016",
+      "kind": "NFR",
+      "cluster": "Outcomes",
+      "priority": "should",
+      "statement": "The system must surface a slipping hospital at least 4 weeks earlier than the operator's current monthly reporting.",
+      "fulfilled_by": [
+        "STORY-010"
+      ]
+    },
+    {
+      "id": "REQ-017",
+      "kind": "NFR",
+      "cluster": "Outcomes",
+      "priority": "should",
+      "statement": "The system must run for under $200 a month until it has 10 paying customers.",
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-018",
+      "kind": "CONSTRAINT",
+      "cluster": "Platforms",
+      "priority": "must",
+      "statement": "The system must use the public CMS HCRIS cost report files as its Phase 0 data source.",
+      "systems": [
+        "CMS HCRIS"
+      ],
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-019",
+      "kind": "CONSTRAINT",
+      "cluster": "Platforms",
+      "priority": "must",
+      "statement": "The system must run on Supabase, Vercel, the Anthropic Claude API and Resend.",
+      "systems": [
+        "Supabase",
+        "Vercel",
+        "Anthropic Claude API",
+        "Resend"
+      ],
+      "fulfilled_by": [
+        "STORY-003",
+        "STORY-005",
+        "STORY-006"
+      ]
+    }
+  ],
+  "releases": [
+    {
+      "key": "r0",
+      "name": "Walking Skeleton: Public Data to Grounded Briefing",
+      "goal": "Prove the full chain from raw public data to a correct, traceable hospitals-at-risk briefing.",
+      "demo": "Look up an Oklahoma rural hospital, see three years of flagged metrics with their source lines, and hand prospect #1 a briefing where every number matches the data.",
+      "week_start": 0,
+      "week_end": 1,
+      "story_ids": [
+        "STORY-001",
+        "STORY-002",
+        "STORY-003",
+        "STORY-004"
+      ],
+      "starts_on": "2026-09-23",
+      "ends_on": "2026-10-06",
+      "is_demo_target": true
+    },
+    {
+      "key": "r1",
+      "name": "Public Health Snapshot Launch",
+      "goal": "Publish the free snapshot only after its numbers are checked against published financials.",
+      "demo": "Share a public link to any Oklahoma or Texas rural hospital's snapshot in a LinkedIn post.",
+      "week_start": 2,
+      "week_end": 2,
+      "story_ids": [
+        "STORY-005"
+      ],
+      "starts_on": "2026-10-07",
+      "ends_on": "2026-10-13",
+      "is_demo_target": false
+    },
+    {
+      "key": "r2",
+      "name": "Trust Spine for Customer Data",
+      "goal": "Put sign-in, company isolation and the patient-data guard in place before any customer file is processed.",
+      "demo": "Sign in as two companies and show neither can see the other, then show a file with patient names rejected before storage.",
+      "week_start": 3,
+      "week_end": 4,
+      "story_ids": [
+        "STORY-006",
+        "STORY-007"
+      ],
+      "starts_on": "2026-10-14",
+      "ends_on": "2026-10-27",
+      "is_demo_target": false
+    },
+    {
+      "key": "r3",
+      "name": "Early Warning on Customer Data",
+      "goal": "Turn monthly customer exports into a live dashboard and a Monday briefing email.",
+      "demo": "Upload a month of exports for two hospitals on different systems and receive the Monday briefing flagging the one that is slipping.",
+      "week_start": 5,
+      "week_end": 6,
+      "story_ids": [
+        "STORY-008",
+        "STORY-009",
+        "STORY-010"
+      ],
+      "starts_on": "2026-10-28",
+      "ends_on": "2026-11-10",
+      "is_demo_target": false
+    },
+    {
+      "key": "r4",
+      "name": "Cost Report Co-pilot",
+      "goal": "Find possible missed reimbursement, with a specialist confirming every finding.",
+      "demo": "Run the co-pilot on one hospital's cost report and have a reimbursement specialist confirm or reject each finding on screen.",
+      "week_start": 7,
+      "week_end": 8,
+      "story_ids": [
+        "STORY-011",
+        "STORY-012"
+      ],
+      "starts_on": "2026-11-11",
+      "ends_on": "2026-11-24",
+      "is_demo_target": false
+    }
+  ],
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Import public cost reports and compute hospital metrics",
+      "release": "r0",
+      "fulfills": [
+        "REQ-001",
+        "REQ-003",
+        "REQ-007",
+        "REQ-018"
+      ],
+      "narrative": "As a Management Company COO, I want every Oklahoma and Texas rural hospital's margin, days cash on hand and days in A/R computed from public cost reports, so that I can compare my hospitals against their peers.",
+      "acceptance": [
+        "Given the latest three years of CMS HCRIS files, When the importer runs, Then every rural and Critical Access Hospital in Oklahoma and Texas has a yearly row with operating margin, days cash on hand and days in A/R.",
+        "Given the importer has already run, When it runs again on the same files, Then the database holds exactly the same rows with no duplicates.",
+        "Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.",
+        "Trust: Every stored metric records the cost report ID, worksheet and line it was computed from."
+      ],
+      "blocked_by": [],
+      "owner_agent": "Data Pipeline",
+      "failure_paths": [
+        "CMS download times out or returns a partial file",
+        "HCRIS column layout changes between years",
+        "A hospital's cost report is missing worksheet lines a metric needs"
+      ],
+      "task_guidance": "Use Python with DuckDB to read the HCRIS report, numeric and alpha files, then upsert into Supabase Postgres keyed on (provider number, fiscal year). Select rural and Critical Access Hospitals by CMS provider type and state code.",
+      "due_on": "2026-09-27",
+      "due_baseline_on": "2026-09-27"
+    },
+    {
+      "id": "STORY-002",
+      "title": "Flag at-risk hospitals with fixed warning rules",
+      "release": "r0",
+      "fulfills": [
+        "REQ-005",
+        "REQ-003"
+      ],
+      "narrative": "As a Management Company COO, I want hospitals flagged by clear, fixed rules, so that I can trust why a hospital is on the at-risk list.",
+      "acceptance": [
+        "Given a hospital with operating margin below 0%, days cash on hand below 30, or days in A/R rising two years in a row, When the engine runs, Then that hospital receives a flag naming the rule it tripped.",
+        "Given a hospital whose metrics are missing, When the engine runs, Then it is marked as not assessable rather than stable.",
+        "Given the engine has already run on the same data, When it runs again, Then no duplicate flags are created.",
+        "Trust: Every flag stores the exact metric values and years that triggered it."
+      ],
+      "blocked_by": [
+        "STORY-001"
+      ],
+      "owner_agent": "Early-Warning Engine",
+      "failure_paths": [
+        "A missing metric is silently treated as passing a rule",
+        "A rule threshold changes without a test catching it",
+        "A re-run creates duplicate flags"
+      ],
+      "task_guidance": "Write each rule as a small pure Python function with pytest tests at, just above and just below each threshold. Store flags in a warning_flags table keyed on (hospital, rule, period).",
+      "due_on": "2026-09-30",
+      "due_baseline_on": "2026-09-30"
+    },
+    {
+      "id": "STORY-003",
+      "title": "Write a grounded hospitals-at-risk briefing",
+      "release": "r0",
+      "fulfills": [
+        "REQ-006",
+        "REQ-004",
+        "REQ-019"
+      ],
+      "narrative": "As a Management Company CEO, I want a one-page plain-English briefing on which hospitals need attention and why, so that I can act without reading spreadsheets.",
+      "acceptance": [
+        "Given a list of hospitals, When the briefing script runs, Then Claude Sonnet 5 produces a one-page briefing covering every flagged hospital in the list.",
+        "Given a briefing that contains a number not present in the engine's output, When the grounding check runs, Then the briefing is rejected and not saved.",
+        "Given the Claude API times out or errors, When the script runs, Then it retries a capped number of times and then fails with a clear message, saving nothing partial.",
+        "Trust: Every number in a saved briefing matches a stored metric or flag value."
+      ],
+      "blocked_by": [
+        "STORY-002"
+      ],
+      "owner_agent": "Briefing Agent",
+      "failure_paths": [
+        "The model invents a figure or rounds one differently from the data",
+        "Claude API timeout or rate limit",
+        "The briefing leaves out a flagged hospital"
+      ],
+      "task_guidance": "Pass only engine output (metrics and flags) as structured input, extract every number from the response and check it against the input before saving. 30 second timeout, at most 3 retries with backoff.",
+      "due_on": "2026-10-03",
+      "due_baseline_on": "2026-10-03"
+    },
+    {
+      "id": "STORY-004",
+      "title": "Build the public Health Snapshot search and hospital page",
+      "release": "r0",
+      "fulfills": [
+        "REQ-002",
+        "REQ-003"
+      ],
+      "narrative": "As a Rural Hospital CEO, I want to look up my hospital and see its financial health and trends, so that I know how it compares without asking anyone.",
+      "acceptance": [
+        "Given a visitor on the snapshot page, When they search by hospital name or city, Then matching Oklahoma and Texas rural hospitals are listed.",
+        "Given a hospital page, When it loads, Then it shows three years of operating margin, days cash on hand and days in A/R with any flags in plain words.",
+        "Given a hospital with missing metrics, When its page loads, Then the missing values read 'not reported' rather than zero.",
+        "Trust: Every figure on the page shows which cost report year it came from, and the page states that public data lags one to two years."
+      ],
+      "blocked_by": [
+        "STORY-002"
+      ],
+      "owner_agent": "Snapshot Site",
+      "failure_paths": [
+        "Search finds nothing because of spelling differences in hospital names",
+        "The database is unreachable when a page renders",
+        "An old fiscal year is shown as if it were current"
+      ],
+      "task_guidance": "Next.js app in web/ reading from Supabase, with the data year shown next to every figure. Run locally until STORY-005 checks the numbers.",
+      "due_on": "2026-10-06",
+      "due_baseline_on": "2026-10-06"
+    },
+    {
+      "id": "STORY-005",
+      "title": "Publish the snapshot after checking numbers against published financials",
+      "release": "r1",
+      "fulfills": [
+        "REQ-002",
+        "REQ-019"
+      ],
+      "narrative": "As a HosPulse Founder, I want the public snapshot live only after its numbers match published hospital financials, so that the first thing prospects see is correct.",
+      "acceptance": [
+        "Given five hospitals with published audited financials, When their snapshot metrics are compared, Then each metric is within 2 percentage points or 5 days of the published figure, or the difference is explained in writing.",
+        "Given the check passes, When the site is deployed to Vercel, Then the public URL serves every hospital page.",
+        "Given a deploy fails, When a previous version exists, Then the previous version stays live.",
+        "Trust: No page shows a metric from a formula that failed the comparison check."
+      ],
+      "blocked_by": [
+        "STORY-004"
+      ],
+      "owner_agent": "Snapshot Site",
+      "failure_paths": [
+        "Our days cash formula differs from how auditors compute it",
+        "Vercel build fails on a missing environment variable",
+        "The Supabase free tier pauses the database for inactivity"
+      ],
+      "task_guidance": "Keep checks/published_financials.csv and a pytest that compares against it. Deploy with Vercel, with environment variables set only in the Vercel dashboard.",
+      "due_on": "2026-10-13",
+      "due_baseline_on": "2026-10-13"
+    },
+    {
+      "id": "STORY-006",
+      "title": "Sign operators in and isolate each company's hospitals",
+      "release": "r2",
+      "fulfills": [
+        "REQ-008",
+        "REQ-019"
+      ],
+      "narrative": "As a Management Company COO, I want to sign in and see only the hospitals my company manages, so that our data never leaks to another company.",
+      "acceptance": [
+        "Given an operator from company A, When they sign in, Then they see only company A's hospitals.",
+        "Given an operator from company A, When they request a company B hospital by ID or URL, Then the request is refused and nothing from company B is returned.",
+        "Given a signed-out visitor, When they open any portal page, Then they are sent to sign in.",
+        "Trust: Company isolation is enforced by database row-level security, and a test proves a cross-company query returns zero rows."
+      ],
+      "blocked_by": [
+        "STORY-004"
+      ],
+      "owner_agent": "Operator Portal",
+      "failure_paths": [
+        "A new table ships without a row-level security policy",
+        "The session expires in the middle of an upload",
+        "An operator is assigned to the wrong company"
+      ],
+      "task_guidance": "Supabase Auth with companies and company_members tables, row-level security on every customer table, and a test that signs in as two companies.",
+      "due_on": "2026-10-20",
+      "due_baseline_on": "2026-10-20"
+    },
+    {
+      "id": "STORY-007",
+      "title": "Accept monthly exports and reject anything with patient data",
+      "release": "r2",
+      "fulfills": [
+        "REQ-009",
+        "REQ-010",
+        "REQ-003",
+        "REQ-007"
+      ],
+      "narrative": "As a Management Company CFO, I want to upload each hospital's monthly financial exports safely, so that HosPulse can track them without ever holding patient data.",
+      "acceptance": [
+        "Given a GL, A/R aging, denials summary or staffing export with only allowed columns, When an operator uploads it, Then the original file is stored privately and linked to the hospital and month.",
+        "Given a file containing a column or value that looks like patient data (names, birth dates, record numbers), When it is uploaded, Then it is rejected before storage with a message saying why.",
+        "Given the same file is uploaded twice, When the second upload arrives, Then it is recognized as a duplicate and not stored again.",
+        "Trust: No rejected file, or any part of it, is ever written to storage or logs."
+      ],
+      "blocked_by": [
+        "STORY-006"
+      ],
+      "owner_agent": "Operator Portal",
+      "failure_paths": [
+        "Patient names hidden in a free-text memo column",
+        "Upload of a large Excel file times out",
+        "The wrong hospital is selected for a file"
+      ],
+      "task_guidance": "Check each file against a strict allowed-column list per export type first, then run Microsoft Presidio on text columns. Store accepted files in a private Supabase Storage bucket keyed on the file's SHA-256.",
+      "due_on": "2026-10-27",
+      "due_baseline_on": "2026-10-27"
+    },
+    {
+      "id": "STORY-008",
+      "title": "Normalize exports into standard monthly metrics",
+      "release": "r3",
+      "fulfills": [
+        "REQ-011",
+        "REQ-007"
+      ],
+      "narrative": "As a Management Company CFO, I want exports from different hospital systems turned into the same monthly numbers, so that I can compare hospitals that run different software.",
+      "acceptance": [
+        "Given exports from two different hospital systems for the same month, When they are normalized, Then both produce the same standard monthly metrics (cash, days in A/R, denial rate, open positions).",
+        "Given an export in a format with no known mapping, When normalization runs, Then the file is marked 'needs mapping' and no metrics are guessed.",
+        "Given normalization has already run for a file, When it runs again, Then the monthly metrics are unchanged and not duplicated.",
+        "Trust: Every monthly metric links back to the stored file and row it came from."
+      ],
+      "blocked_by": [
+        "STORY-007"
+      ],
+      "owner_agent": "Data Pipeline",
+      "failure_paths": [
+        "A vendor renames a column in an export update",
+        "A totals row is counted as a data row",
+        "Fiscal months are offset between systems"
+      ],
+      "task_guidance": "pandas mapping per source system in a versioned mappings/ folder, with a test fixture file for each. Upsert on (hospital, month, metric).",
+      "due_on": "2026-11-02",
+      "due_baseline_on": "2026-11-02"
+    },
+    {
+      "id": "STORY-009",
+      "title": "Show each managed hospital's dashboard with flags and briefings",
+      "release": "r3",
+      "fulfills": [
+        "REQ-012",
+        "REQ-005"
+      ],
+      "narrative": "As a Management Company COO, I want one screen showing every hospital I manage with its trends, flags and past briefings, so that I can see trouble at a glance.",
+      "acceptance": [
+        "Given monthly metrics for a company's hospitals, When the operator opens the portal, Then every hospital is listed with status, days cash, days in A/R, margin and a 12-week trend.",
+        "Given a flagged hospital, When the operator opens it, Then the flag, the rule and the triggering numbers are shown.",
+        "Given a hospital with no uploads yet, When the dashboard loads, Then it shows 'no data yet' rather than a stable status.",
+        "Trust: Status colors come only from engine flags, never from the page's own calculations."
+      ],
+      "blocked_by": [
+        "STORY-008",
+        "STORY-003"
+      ],
+      "owner_agent": "Operator Portal",
+      "failure_paths": [
+        "An old month is shown as current",
+        "A chart draws zero for missing months",
+        "The page is slow to load with many hospitals"
+      ],
+      "task_guidance": "Extend the Next.js portal, read metrics and flags through Supabase with row-level security, and follow the layout in project-blueprint/mockup.html.",
+      "due_on": "2026-11-06",
+      "due_baseline_on": "2026-11-06"
+    },
+    {
+      "id": "STORY-010",
+      "title": "Email the weekly hospitals-at-risk briefing on a schedule",
+      "release": "r3",
+      "fulfills": [
+        "REQ-013",
+        "REQ-006",
+        "REQ-016"
+      ],
+      "narrative": "As a Management Company CEO, I want the briefing in my inbox every Monday morning, so that I start the week knowing where to look.",
+      "acceptance": [
+        "Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.",
+        "Given the run is triggered twice for the same week, When the second run happens, Then no operator receives a second email.",
+        "Given the email service fails, When the run finishes, Then the briefing is still saved in the portal and the failure is logged with a retry.",
+        "Trust: A company's briefing only ever goes to that company's operators."
+      ],
+      "blocked_by": [
+        "STORY-009"
+      ],
+      "owner_agent": "Briefing Agent",
+      "failure_paths": [
+        "The GitHub Actions run is delayed or skipped",
+        "Resend rate limit or outage",
+        "An operator's email bounces"
+      ],
+      "task_guidance": "GitHub Actions cron, an idempotency key of (company, week) stored before sending, and Resend with a 10 second timeout and 3 retries.",
+      "due_on": "2026-11-10",
+      "due_baseline_on": "2026-11-10"
+    },
+    {
+      "id": "STORY-011",
+      "title": "Find possible missed reimbursement in a cost report",
+      "release": "r4",
+      "fulfills": [
+        "REQ-015"
+      ],
+      "narrative": "As a Reimbursement Specialist, I want likely missed reimbursement items listed with the lines that support them, so that I review the right places first.",
+      "acceptance": [
+        "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",
+        "Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.",
+        "Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.",
+        "Trust: Every finding cites real cost report lines and ledger totals present in the input."
+      ],
+      "blocked_by": [
+        "STORY-008"
+      ],
+      "owner_agent": "Cost Report Co-pilot",
+      "failure_paths": [
+        "The model cites a worksheet line that does not exist",
+        "Ledger categories do not map to cost report lines",
+        "A long cost report exceeds the context budget"
+      ],
+      "task_guidance": "Claude Opus 5.5 with structured output. Check every cited line against the parsed cost report before a finding is shown.",
+      "due_on": "2026-11-18",
+      "due_baseline_on": "2026-11-18"
+    },
+    {
+      "id": "STORY-012",
+      "title": "Require specialist sign-off on every co-pilot finding",
+      "release": "r4",
+      "fulfills": [
+        "REQ-014"
+      ],
+      "narrative": "As a Reimbursement Specialist, I want every finding to wait for my confirm or reject decision, so that nothing is filed on an AI suggestion alone.",
+      "acceptance": [
+        "Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.",
+        "Given a specialist confirms or rejects a finding, When they submit, Then the decision, their name and the time are recorded.",
+        "Given a finding that has already been decided, When someone tries to decide it again, Then the original decision stands and the attempt is recorded.",
+        "Trust: Every decision on a finding is kept in an append-only audit record."
+      ],
+      "blocked_by": [
+        "STORY-011"
+      ],
+      "owner_agent": "Cost Report Co-pilot",
+      "failure_paths": [
+        "An unconfirmed finding is exported by mistake",
+        "Two specialists decide the same finding at the same time",
+        "The audit record write fails"
+      ],
+      "task_guidance": "A findings table with a status column, a separate insert-only finding_decisions table, and a database constraint so only one decision per finding can exist.",
+      "due_on": "2026-11-24",
+      "due_baseline_on": "2026-11-24"
+    }
+  ],
+  "agents": [
+    {
+      "id": "AGENT-001",
+      "name": "Briefing Agent",
+      "purpose": "Turns the early-warning engine's flags and metrics into a short plain-English hospitals-at-risk briefing.",
+      "trigger_type": "schedule",
+      "trigger": "Mondays 6:00 AM Central, or by hand from a script",
+      "inputs": [
+        "Metrics and flags for one company's hospitals, as computed by the engine"
+      ],
+      "outputs": [
+        "A one-page briefing saved to the portal and emailed to that company's operators"
+      ],
+      "autonomy_level": "draft_with_automatic_check",
+      "approval_gates": [
+        "The grounding check must confirm every number is in the input before the briefing is saved"
+      ],
+      "escalation_rules": [
+        "If the grounding check fails twice, save nothing and alert the founder"
+      ],
+      "skills": [],
+      "owns": [
+        "STORY-003",
+        "STORY-010"
+      ]
+    },
+    {
+      "id": "AGENT-002",
+      "name": "Cost Report Co-pilot",
+      "purpose": "Compares a hospital's cost report with its ledger totals and lists possible missed reimbursement for a specialist to review.",
+      "trigger_type": "on_demand",
+      "trigger": "An operator requests a review for a hospital and fiscal year",
+      "inputs": [
+        "Parsed cost report lines",
+        "Ledger totals for the same fiscal year"
+      ],
+      "outputs": [
+        "Unconfirmed findings, each citing the lines it compared"
+      ],
+      "autonomy_level": "suggest_only",
+      "approval_gates": [
+        "A reimbursement specialist confirms or rejects every finding"
+      ],
+      "escalation_rules": [
+        "Findings citing lines that do not exist are dropped and logged"
+      ],
+      "skills": [],
+      "owns": [
+        "STORY-011",
+        "STORY-012"
+      ]
+    }
+  ],
+  "project": {
+    "name": "HosPulse",
+    "descriptor": "Early-warning intelligence for companies that manage rural hospitals: one view across every managed hospital, fixed and tested warning rules, and a plain-English weekly briefing, built without patient data.",
+    "repo_url": "https://github.com/qninying/HosPulse",
+    "plan_version": 1
+  },
+  "schedule": {
+    "build_start": "2026-09-23",
+    "build_end": "2026-11-24",
+    "demo_day": "2026-10-07",
+    "build_weeks": 9,
+    "demo_release_key": "r0",
+    "roadmap_release_keys": [
+      "r1",
+      "r2",
+      "r3",
+      "r4"
+    ],
+    "prep": [
+      {
+        "key": "PREP-1",
+        "title": "Coffee with prospect #1 using the validation question list",
+        "due_on": "2026-09-30"
+      },
+      {
+        "key": "PREP-2",
+        "title": "Publish LinkedIn Post 1 (the visibility problem)",
+        "due_on": "2026-10-01"
+      },
+      {
+        "key": "PREP-3",
+        "title": "Show the r0 briefing to prospect #1 and ask for a 4-week free trial",
+        "due_on": "2026-10-07"
+      },
+      {
+        "key": "PREP-4",
+        "title": "Agree trial scope and what success means in writing",
+        "due_on": "2026-10-09"
+      },
+      {
+        "key": "PREP-5",
+        "title": "Recruit a rural hospital finance advisor",
+        "due_on": "2026-10-16"
+      }
+    ]
+  },
+  "derived": {
+    "measures": [
+      {
+        "id": "REQ-016",
+        "statement": "The system must surface a slipping hospital at least 4 weeks earlier than the operator's current monthly reporting."
+      },
+      {
+        "id": "REQ-017",
+        "statement": "The system must run for under $200 a month until it has 10 paying customers."
+      }
+    ],
+    "guardrails": [
+      {
+        "id": "REQ-003",
+        "statement": "The system must make every displayed or briefed number traceable to the public cost report line or uploaded file row it came from."
+      },
+      {
+        "id": "REQ-004",
+        "statement": "The system must reject any AI-written briefing that contains a number not present in the early-warning engine's output."
+      },
+      {
+        "id": "REQ-008",
+        "statement": "The system must require operators to sign in and must only ever show a management company the hospitals it manages."
+      },
+      {
+        "id": "REQ-009",
+        "statement": "The system must reject any upload that contains patient-identifying data before it is stored or logged."
+      },
+      {
+        "id": "REQ-014",
+        "statement": "The system must hold every cost report co-pilot finding as unconfirmed until a human reimbursement specialist confirms or rejects it."
+      }
+    ],
+    "systems": [
+      "CMS HCRIS",
+      "Supabase",
+      "Vercel",
+      "Anthropic Claude API",
+      "Resend"
+    ],
+    "roles": [
+      "Management Company COO",
+      "Management Company CEO",
+      "Rural Hospital CEO",
+      "HosPulse Founder",
+      "Management Company CFO",
+      "Reimbursement Specialist"
+    ],
+    "owners": [
+      {
+        "name": "Data Pipeline",
+        "owns": [
+          "STORY-001",
+          "STORY-008"
+        ]
+      },
+      {
+        "name": "Early-Warning Engine",
+        "owns": [
+          "STORY-002"
+        ]
+      },
+      {
+        "name": "Briefing Agent",
+        "owns": [
+          "STORY-003",
+          "STORY-010"
+        ]
+      },
+      {
+        "name": "Snapshot Site",
+        "owns": [
+          "STORY-004",
+          "STORY-005"
+        ]
+      },
+      {
+        "name": "Operator Portal",
+        "owns": [
+          "STORY-006",
+          "STORY-007",
+          "STORY-009"
+        ]
+      },
+      {
+        "name": "Cost Report Co-pilot",
+        "owns": [
+          "STORY-011",
+          "STORY-012"
+        ]
+      }
+    ],
+    "counts": {
+      "requirements_total": 19,
+      "requirements_by_kind": {
+        "CONSTRAINT": 2,
+        "FUNC": 9,
+        "NFR": 2,
+        "REL": 1,
+        "SAFE": 5
+      },
+      "stories_total": 12,
+      "releases_total": 5,
+      "agents_total": 2,
+      "failure_paths_total": 36,
+      "agents_by_autonomy": {
+        "draft_with_automatic_check": 1,
+        "suggest_only": 1
+      }
+    }
+  }
+}

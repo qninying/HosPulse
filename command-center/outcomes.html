@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse Outcomes</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+  <main>
+    <h1 class="cc-page-title">Outcomes</h1>
+    <p class="cc-page-desc">The numbers HosPulse has to move. The plan records the commitment, never the measurement: real values come from the running system once it measures them.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, sampleBadge, getParam } = CommandCenter;
+
+    // Sample overlay only, keyed by requirement id. Real mode never shows these.
+    const SAMPLE_READOUT = {
+      "REQ-016": { value: "6 weeks earlier", note: "median lead time over the operator's monthly report, across 3 pilot hospitals" },
+      "REQ-017": { value: "$48 / month", note: "Supabase, Vercel, Claude API and Resend combined" },
+    };
+
+    function measures(plan) {
+      return (plan.derived && plan.derived.measures) || [];
+    }
+
+    function renderList({ plan }) {
+      const el = document.getElementById("cc-content");
+      const list = measures(plan);
+      if (list.length === 0) {
+        el.innerHTML = `<div class="cc-empty-state">No outcome measures (NFR requirements) in the plan yet.</div>`;
+        return;
+      }
+      el.innerHTML = `<div class="cc-grid">` + list.map((m) => `
+        <a class="cc-card" href="outcomes.html?id=${encodeURIComponent(m.id)}">
+          <h3>${esc(m.id)}</h3>
+          <p>${esc(m.statement)}</p>
+        </a>
+      `).join("") + `</div>`;
+    }
+
+    function renderDetail({ plan, mode }, id) {
+      const el = document.getElementById("cc-content");
+      const m = measures(plan).find((x) => x.id === id);
+      if (!m) {
+        el.innerHTML = `<p class="cc-back"><a href="outcomes.html">&larr; Outcomes</a></p><div class="cc-empty-state">No outcome measure "${esc(id)}" in the plan.</div>`;
+        return;
+      }
+      const req = (plan.requirements || []).find((r) => r.id === id) || {};
+      const sample = SAMPLE_READOUT[id];
+      const readout = mode === "sample" && sample
+        ? `<p class="cc-card-value">${esc(sample.value)}${sampleBadge()}</p><p style="color:var(--cc-muted); font-size:13px;">${esc(sample.note)}</p>`
+        : `<p class="cc-card-value" style="color:var(--cc-muted)">Not measured yet</p>
+           <p style="color:var(--cc-muted); font-size:13px;">Nothing is measuring this yet. It gets a real value once the stories below are built and running.</p>`;
+      const stories = (req.fulfilled_by || []);
+      el.innerHTML = `
+        <p class="cc-back"><a href="outcomes.html">&larr; Outcomes</a></p>
+        <div class="cc-panel-box">
+          <p class="cc-kicker">${esc(m.id)} · ${esc(req.priority || "")}</p>
+          <p style="margin:0 0 16px; font-size:15px;">${esc(m.statement)}</p>
+          ${readout}
+          <p style="font-size:13px; margin-top:16px;"><strong>Measured by:</strong> ${stories.length
+            ? stories.map((s) => `<a href="project-management.html?id=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ")
+            : "no story yet. This is tracked over time rather than built by one story."}</p>
+        </div>
+      `;
+    }
+
+    CommandCenter.init("outcomes", (data) => {
+      const id = getParam("id");
+      if (id) renderDetail(data, id); else renderList(data);
+    });
+  })();
+  </script>
+</body>
+</html>

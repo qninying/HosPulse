@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse Data Model</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+  <main>
+    <h1 class="cc-page-title">Data Model</h1>
+    <p class="cc-page-desc">A proposed starting point, not the answer: the tables the requirements say HosPulse has to store, named for the hospital domain rather than any vendor. None of these exist yet. Review before any table is created.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, getParam } = CommandCenter;
+
+    // Proposal, not plan data: the plan file has no schema, so this list is the
+    // one hand-authored part of the Command Center. Each entry cites the
+    // requirements it is derived from, and those ids are checked against the
+    // plan at render time so a removed requirement shows up as a warning.
+    const ENTITIES = [
+      { name: "Hospital", reqs: ["REQ-001", "REQ-002"], fields: ["id", "cms_provider_number", "name", "city", "state", "hospital_type (critical access / rural)", "beds"], relates: "has many CostReportYear, MonthlyMetric, WarningFlag; managed by at most one ManagementCompany" },
+      { name: "CostReportYear", reqs: ["REQ-001", "REQ-003", "REQ-018"], fields: ["hospital_id", "fiscal_year", "operating_margin", "days_cash_on_hand", "days_in_ar", "source_report_id", "source_worksheet_line", "missing_reason"], relates: "belongs to one Hospital; unique on (hospital_id, fiscal_year)" },
+      { name: "WarningFlag", reqs: ["REQ-005", "REQ-003"], fields: ["hospital_id", "rule", "period", "triggering_values (json)", "created_at"], relates: "belongs to one Hospital; unique on (hospital_id, rule, period)" },
+      { name: "Briefing", reqs: ["REQ-004", "REQ-006", "REQ-013"], fields: ["id", "company_id (null for founder-run)", "week", "body", "grounding_check_passed", "model", "created_at"], relates: "covers many Hospital; unique on (company_id, week)" },
+      { name: "BriefingDelivery", reqs: ["REQ-013"], fields: ["briefing_id", "operator_id", "sent_at", "provider_message_id", "status"], relates: "belongs to one Briefing and one Operator; unique on (briefing_id, operator_id)" },
+      { name: "ManagementCompany", reqs: ["REQ-008"], fields: ["id", "name", "created_at"], relates: "has many Operator and Hospital" },
+      { name: "Operator", reqs: ["REQ-008"], fields: ["id", "company_id", "email", "role"], relates: "belongs to one ManagementCompany" },
+      { name: "MonthlyExport", reqs: ["REQ-009", "REQ-010", "REQ-003"], fields: ["id", "hospital_id", "month", "export_type (GL / AR aging / denials / staffing)", "file_sha256", "storage_path", "status (accepted / needs mapping)", "uploaded_by", "uploaded_at"], relates: "belongs to one Hospital; unique on file_sha256. Rejected files are never stored." },
+      { name: "MonthlyMetric", reqs: ["REQ-011", "REQ-012", "REQ-007"], fields: ["hospital_id", "month", "metric", "value", "source_export_id", "source_row"], relates: "belongs to one Hospital and one MonthlyExport; unique on (hospital_id, month, metric)" },
+      { name: "CostReportFinding", reqs: ["REQ-015", "REQ-014"], fields: ["id", "hospital_id", "fiscal_year", "description", "cited_lines", "ledger_totals", "status (unconfirmed / confirmed / rejected)"], relates: "belongs to one Hospital; has at most one FindingDecision" },
+      { name: "FindingDecision", reqs: ["REQ-014"], fields: ["finding_id", "decision", "decided_by", "decided_at"], relates: "insert-only; unique on finding_id" },
+    ];
+
+    function unknownReqs(plan, e) {
+      const ids = new Set((plan.requirements || []).map((r) => r.id));
+      return e.reqs.filter((r) => !ids.has(r));
+    }
+
+    function renderList({ plan }) {
+      const el = document.getElementById("cc-content");
+      el.innerHTML = `<div class="cc-banner">Proposed model. The plan files carry no schema, so this tab is hand-authored and each table cites the requirements that justify it.</div>
+        <div class="cc-grid">` + ENTITIES.map((e) => {
+          const bad = unknownReqs(plan, e);
+          return `<a class="cc-card" href="data-model.html?id=${encodeURIComponent(e.name)}">
+            <h3>${esc(e.name)}</h3>
+            <p>From ${esc(e.reqs.join(", "))}</p>
+            ${bad.length ? `<p style="color:var(--cc-warn); margin-top:6px;">Cites ${esc(bad.join(", "))}, no longer in the plan</p>` : ""}
+          </a>`;
+        }).join("") + `</div>`;
+    }
+
+    function renderDetail({ plan }, id) {
+      const el = document.getElementById("cc-content");
+      const e = ENTITIES.find((x) => x.name === id);
+      if (!e) {
+        el.innerHTML = `<p class="cc-back"><a href="data-model.html">&larr; Data Model</a></p><div class="cc-empty-state">No table "${esc(id)}" in this model.</div>`;
+        return;
+      }
+      const reqs = e.reqs.map((rid) => (plan.requirements || []).find((r) => r.id === rid) || { id: rid, statement: "not in the plan any more" });
+      el.innerHTML = `
+        <p class="cc-back"><a href="data-model.html">&larr; Data Model</a></p>
+        <div class="cc-panel-box">
+          <p class="cc-kicker">Proposed table</p>
+          <h3 style="margin:0 0 10px;">${esc(e.name)}</h3>
+          <p style="font-size:13px; margin-bottom:4px;"><strong>Fields</strong></p>
+          <ul style="font-size:13px; margin-top:0;">${e.fields.map((f) => `<li><code>${esc(f)}</code></li>`).join("")}</ul>
+          <p style="font-size:13px;"><strong>Relationships:</strong> ${esc(e.relates)}</p>
+          <p style="font-size:13px; margin-bottom:4px;"><strong>Why it exists</strong></p>
+          <ul style="font-size:13px; margin-top:0;">${reqs.map((r) => `<li><a href="knowledge-base.html#${esc(r.id)}">${esc(r.id)}</a>: ${esc(r.statement)}</li>`).join("")}</ul>
+        </div>`;
+    }
+
+    CommandCenter.init("data-model", (data) => {
+      const id = getParam("id");
+      if (id) renderDetail(data, id); else renderList(data);
+    });
+  })();
+  </script>
+</body>
+</html>

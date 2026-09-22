@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse Knowledge Base</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+<style>
+  .cc-chat-input { display: flex; gap: 8px; margin-bottom: 16px; }
+  .cc-chat-input input { flex: 1; padding: 10px 12px; border: 1px solid var(--cc-border); border-radius: 8px; font-size: 13px; background: var(--cc-panel); color: var(--cc-text); }
+  .cc-chat-input button { padding: 10px 16px; border: none; border-radius: 8px; background: var(--cc-accent); color: var(--cc-accent-contrast); font-weight: 600; cursor: pointer; font-size: 13px; }
+  .cc-chat-answer { background: var(--cc-panel-2); border: 1px solid var(--cc-border); border-radius: var(--cc-radius); padding: 12px 16px; }
+  .cc-chat-hit { border-bottom: 1px solid var(--cc-border); padding: 8px 0; font-size: 13px; }
+  .cc-chat-hit:last-child { border-bottom: none; }
+  tr:target { background: var(--cc-accent-weak); }
+</style>
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+  <main>
+    <h1 class="cc-page-title">Knowledge Base</h1>
+    <p class="cc-page-desc">Everything the project knows about itself: requirements, which stories cover them, and a search panel that only answers from this plan and cites where the answer came from.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, statusDot, verificationForRequirement } = CommandCenter;
+    let PLAN, PROGRESS;
+
+    function matches(q, ...fields) {
+      return fields.some((f) => (f || "").toLowerCase().includes(q));
+    }
+
+    function searchData(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) return [];
+      const hits = [];
+      (PLAN.requirements || []).forEach((r) => {
+        if (matches(q, r.id, r.statement, r.cluster)) hits.push({ tab: "Knowledge Base", label: `${r.id}: ${r.statement}`, href: `knowledge-base.html#${r.id}` });
+      });
+      (PLAN.stories || []).forEach((s) => {
+        if (matches(q, s.id, s.title, s.narrative, s.task_guidance, ...(s.acceptance || []), ...(s.failure_paths || []))) {
+          hits.push({ tab: "Project Management", label: `${s.id}: ${s.title}`, href: `project-management.html?id=${encodeURIComponent(s.id)}` });
+        }
+      });
+      (PLAN.agents || []).forEach((a) => {
+        if (matches(q, a.name, a.purpose, a.trigger)) hits.push({ tab: "AI Agents", label: `${a.name}: ${a.purpose}`, href: `agents.html?id=${encodeURIComponent(a.id)}` });
+      });
+      ((PLAN.derived && PLAN.derived.systems) || []).forEach((sys) => {
+        if (matches(q, sys)) hits.push({ tab: "Systems", label: sys, href: `systems.html?id=${encodeURIComponent(sys)}` });
+      });
+      return hits;
+    }
+
+    function ask() {
+      const input = document.getElementById("cc-chat-q");
+      const answerEl = document.getElementById("cc-chat-answer");
+      if (!input.value.trim()) { answerEl.innerHTML = ""; return; }
+      const hits = searchData(input.value);
+      answerEl.innerHTML = hits.length === 0
+        ? `<div class="cc-chat-answer">I can't answer that from this plan. Try a word from a requirement, story, agent or system, such as "patient", "briefing" or "Supabase".</div>`
+        : `<div class="cc-chat-answer"><p style="margin:0 0 6px; font-size:12px; color:var(--cc-muted);">${hits.length} match${hits.length === 1 ? "" : "es"} in the plan</p>` +
+          hits.map((h) => `<div class="cc-chat-hit"><a href="${h.href}">${esc(h.label)}</a><br/><span style="color:var(--cc-muted); font-size:11px;">from ${esc(h.tab)}</span></div>`).join("") + `</div>`;
+    }
+
+    function render() {
+      const el = document.getElementById("cc-content");
+      const rows = (PLAN.requirements || []).map((r) => {
+        const v = verificationForRequirement(PLAN, PROGRESS, r);
+        const gap = r.priority === "must" && (r.fulfilled_by || []).length === 0;
+        return `<tr id="${esc(r.id)}"${gap ? ' style="background: var(--cc-warn-bg);"' : ""}>
+          <td>${esc(r.id)}</td>
+          <td>${esc(r.statement)}<br/><span style="color:var(--cc-muted); font-size:11px;">${esc(r.kind)} · ${esc(r.cluster)}</span></td>
+          <td><span class="cc-tag cc-tag-${esc(r.priority)}">${esc(r.priority)}</span></td>
+          <td>${(r.fulfilled_by || []).map((s) => `<a href="project-management.html?id=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ") || (gap ? "None: gap" : "none (tracked measure)")}</td>
+          <td>${statusDot(v.state)}${esc(v.state)}</td>
+        </tr>`;
+      }).join("");
+
+      el.innerHTML = `
+        <div class="cc-panel-box">
+          <h3 style="margin-top:0;">Ask the knowledge base</h3>
+          <div class="cc-chat-input">
+            <input id="cc-chat-q" type="text" placeholder="e.g. patient data, briefing, idempotent, Supabase" aria-label="Question" />
+            <button id="cc-chat-ask">Ask</button>
+          </div>
+          <div id="cc-chat-answer"></div>
+        </div>
+        <div class="cc-panel-box">
+          <h3 style="margin-top:0;">Requirements traceability</h3>
+          <p style="color:var(--cc-muted); font-size:13px; margin-top:0;">Status is always real: a requirement is enforced only when every story fulfilling it is verified.</p>
+          <div class="cc-table-wrap"><table class="cc-table">
+            <thead><tr><th>ID</th><th>Statement</th><th>Priority</th><th>Fulfilled by</th><th>Status</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table></div>
+        </div>
+        <div class="cc-panel-box">
+          <h3 style="margin-top:0;">Decisions and notes</h3>
+          <p style="color:var(--cc-muted); font-size:13px; margin:0;">Decisions live in the repo, not in this page: <code>project-blueprint/architecture.md</code>, <code>project-blueprint/tech-stack.md</code>, <code>project-blueprint/mvp-plan.md</code> and <code>PROGRESS.md</code>.</p>
+        </div>
+      `;
+      document.getElementById("cc-chat-ask").addEventListener("click", ask);
+      document.getElementById("cc-chat-q").addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+      if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: "center" });
+    }
+
+    CommandCenter.init("knowledge-base", ({ plan, progress }) => {
+      PLAN = plan; PROGRESS = progress;
+      render();
+    });
+  })();
+  </script>
+</body>
+</html>

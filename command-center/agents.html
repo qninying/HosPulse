@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hospulse-theme');
+      if (saved === 'light' || saved === 'dark') document.documentElement.setAttribute('data-theme', saved);
+    } catch (e) {}
+  })();
+</script>
+<title>HosPulse AI Agents</title>
+<link rel="stylesheet" href="assets/command-center.css" />
+</head>
+<body>
+  <header class="cc-header">
+    <div class="cc-header-top">
+      <div class="cc-brand">
+        <svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#13a39a"/><path d="M4 15h5l2.5-6 4 11 2.5-5H24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Command Center <span class="cc-brand-sub" id="cc-project-sub"></span>
+      </div>
+      <div class="cc-header-controls">
+        <div class="cc-mode-toggle" id="cc-mode-toggle"></div>
+        <button class="cc-theme-toggle" id="cc-theme-toggle" aria-label="Switch between day and night theme" title="Day / Night"></button>
+      </div>
+    </div>
+    <div class="cc-data-as-of" id="cc-data-as-of">Loading…</div>
+    <nav class="cc-nav" id="cc-nav"></nav>
+  </header>
+  <main>
+    <h1 class="cc-page-title">AI Agents</h1>
+    <p class="cc-page-desc">The AI agents HosPulse is designed around: what triggers them, what they may do on their own, and where a human or an automatic check stands in the way. Design only. No agent has run until it is built.</p>
+    <div id="cc-content">Loading…</div>
+  </main>
+  <script src="assets/command-center.js"></script>
+  <script>
+  (function () {
+    const { esc, getParam, statusDot, sampleBadge, storyState } = CommandCenter;
+
+    // Sample overlay only. Real mode always says "no runs recorded".
+    const SAMPLE_RUNS = {
+      "AGENT-001": "11 runs recorded, last Monday 6:02 AM, 1 briefing rejected by the grounding check",
+      "AGENT-002": "3 reviews run, 7 findings, 4 confirmed by a specialist",
+    };
+
+    function list(items) {
+      return items && items.length ? `<ul style="margin:4px 0 12px; font-size:13px;">${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>` : `<p style="color:var(--cc-muted); font-size:13px;">none</p>`;
+    }
+
+    function runs(agent, mode) {
+      return mode === "sample" && SAMPLE_RUNS[agent.id] ? `${SAMPLE_RUNS[agent.id]}` : "no runs recorded";
+    }
+
+    function renderList({ plan, mode }) {
+      const el = document.getElementById("cc-content");
+      const agents = plan.agents || [];
+      const owners = (plan.derived && plan.derived.owners) || [];
+      const agentCards = agents.length ? `<div class="cc-grid">` + agents.map((a) => `
+        <a class="cc-card" href="agents.html?id=${encodeURIComponent(a.id)}">
+          <h3>${esc(a.name)}${sampleBadge()}</h3>
+          <p>${esc(a.purpose)}</p>
+          <p style="margin-top:8px;"><span class="cc-tag">${esc(a.autonomy_level)}</span> <span class="cc-tag">${esc(a.trigger_type)}</span></p>
+          <p style="margin-top:8px;">${esc(runs(a, mode))}</p>
+        </a>`).join("") + `</div>` : `<div class="cc-empty-state">The plan has no AI agents defined.</div>`;
+      el.innerHTML = agentCards + `
+        <div class="cc-panel-box" style="margin-top:24px;">
+          <h3 style="margin-top:0;">Story owners</h3>
+          <p style="color:var(--cc-muted); font-size:13px; margin-top:0;">Components that own stories. These are parts of the system, not AI agents.</p>
+          <div class="cc-table-wrap"><table class="cc-table"><thead><tr><th>Owner</th><th>Stories</th></tr></thead><tbody>
+          ${owners.map((o) => `<tr><td>${esc(o.name)}</td><td>${o.owns.map((s) => `<a href="project-management.html?id=${encodeURIComponent(s)}">${esc(s)}</a>`).join(", ")}</td></tr>`).join("")}
+          </tbody></table></div>
+        </div>`;
+    }
+
+    function renderDetail({ plan, progress, mode }, id) {
+      const el = document.getElementById("cc-content");
+      const a = (plan.agents || []).find((x) => x.id === id);
+      if (!a) {
+        el.innerHTML = `<p class="cc-back"><a href="agents.html">&larr; AI Agents</a></p><div class="cc-empty-state">No agent "${esc(id)}" in the plan.</div>`;
+        return;
+      }
+      el.innerHTML = `
+        <p class="cc-back"><a href="agents.html">&larr; AI Agents</a></p>
+        <div class="cc-panel-box">
+          <p class="cc-kicker">${esc(a.id)} · ${esc(a.autonomy_level)}${sampleBadge()}</p>
+          <h3 style="margin:0 0 8px;">${esc(a.name)}</h3>
+          <p style="font-size:14px;">${esc(a.purpose)}</p>
+          <p style="font-size:13px;"><strong>Trigger (${esc(a.trigger_type)}):</strong> ${esc(a.trigger)}</p>
+          <p style="font-size:13px; margin-bottom:0;"><strong>Inputs</strong></p>${list(a.inputs)}
+          <p style="font-size:13px; margin-bottom:0;"><strong>Outputs</strong></p>${list(a.outputs)}
+          <p style="font-size:13px; margin-bottom:0;"><strong>Approval gates</strong></p>${list(a.approval_gates)}
+          <p style="font-size:13px; margin-bottom:0;"><strong>Escalation rules</strong></p>${list(a.escalation_rules)}
+          <p style="font-size:13px;"><strong>Skills:</strong> ${a.skills && a.skills.length ? esc(a.skills.join(", ")) : "no skills registered yet"}</p>
+          <p style="font-size:13px;"><strong>Runs:</strong> ${esc(runs(a, mode))}</p>
+          <div class="cc-table-wrap"><table class="cc-table"><thead><tr><th>Owns story</th><th>Title</th><th>State (real)</th></tr></thead><tbody>
+          ${(a.owns || []).map((sid) => {
+            const s = (plan.stories || []).find((x) => x.id === sid);
+            const st = storyState(progress, sid);
+            return `<tr><td><a href="project-management.html?id=${encodeURIComponent(sid)}">${esc(sid)}</a></td><td>${esc(s ? s.title : "")}</td><td>${statusDot(st)}${esc(st)}</td></tr>`;
+          }).join("")}
+          </tbody></table></div>
+        </div>`;
+    }
+
+    CommandCenter.init("agents", (data) => {
+      const id = getParam("id");
+      if (id) renderDetail(data, id); else renderList(data);
+    });
+  })();
+  </script>
+</body>
+</html>
