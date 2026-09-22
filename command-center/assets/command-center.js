@@ -15,7 +15,7 @@ const TABS = [
   { id: "data-model", label: "Data Model", href: "data-model.html" },
 ];
 
-const DATA_DIR = "../.hospulse";
+const DATA_DIR = "../.colaberry";
 const MODE_KEY = "hospulse-cc-mode"; // "sample" | "real"
 const THEME_KEY = "hospulse-theme";
 const STALE_AFTER_DAYS = 7;
@@ -128,6 +128,26 @@ function verificationForRequirement(plan, progress, req) {
   return { state: allVerified ? "enforced" : anyVerified ? "partial" : "not_enforced", stories };
 }
 
+// Some plan sources (the Colaberry platform's own plan.json) don't
+// precompute `derived.owners`; others (this project's own .hospulse
+// planner) do. Read it when present, otherwise derive the same shape from
+// stories[].owner_agent client-side, so the Agents tab works either way.
+function ownersFromPlan(plan) {
+  const precomputed = plan.derived && plan.derived.owners;
+  if (precomputed) return precomputed;
+  const owners = [];
+  (plan.stories || []).forEach((s) => {
+    if (!s.owner_agent) return;
+    let entry = owners.find((o) => o.name === s.owner_agent);
+    if (!entry) {
+      entry = { name: s.owner_agent, owns: [] };
+      owners.push(entry);
+    }
+    entry.owns.push(s.id);
+  });
+  return owners;
+}
+
 function statusDot(state) {
   const cls = state === "verified" || state === "enforced" ? "cc-dot-ok"
     : state === "in_progress" || state === "submitted" || state === "partial" ? "cc-dot-warn"
@@ -187,11 +207,16 @@ async function init(tabId, renderFn) {
     if (el) missingDataState(el, "plan.json");
     return;
   }
+  // Some plan sources leave `schedule` null until dates are finalized (seen
+  // from the Colaberry platform's own plan.json). Normalize to an empty
+  // object so every page's `plan.schedule.field` reads undefined rather
+  // than throwing, and renders an honest blank instead of crashing.
+  if (!plan.schedule) plan.schedule = {};
   if (renderFn) renderFn({ plan, progress, manifest, mode: getMode(), dataAsOf });
 }
 
 window.CommandCenter = {
   TABS, getMode, setMode, loadData, formatDataAsOf, renderChrome, sampleBadge,
   init, getParam, esc: escapeHtml, verificationForRequirement, statusDot, storyState,
-  getTheme, setTheme,
+  getTheme, setTheme, ownersFromPlan,
 };

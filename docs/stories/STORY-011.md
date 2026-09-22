@@ -13,7 +13,7 @@ As a Reimbursement Specialist, I want likely missed reimbursement items listed w
 
 ## How to build it
 
-Claude Opus 5.5 with structured output. Check every cited line against the parsed cost report before a finding is shown.
+Claude Opus 5.5 with structured output. Check every cited line against the parsed cost report before a finding is shown, then call pipeline/grounding_guardrail.validate_ai_output_is_grounded on the finding text against the same parsed facts before it is saved or displayed.
 
 ## Failure paths you must handle
 
@@ -29,6 +29,7 @@ then run `python3 scripts/build_plan.py` to refresh this file.
 - [ ] Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.
 - [ ] Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.
 - [ ] Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.
+- [ ] Given a finding whose dollar amount, percentage or day-count does not match a value in the parsed cost report and ledger facts within tolerance, When pipeline/grounding_guardrail.validate_ai_output_is_grounded runs against it, Then the finding is rejected before it reaches the specialist, per the passing tests in pipeline/test_grounding_guardrail.py.
 - [ ] Trust: Every finding cites real cost report lines and ledger totals present in the input.
 
 ---
@@ -51,6 +52,7 @@ Acceptance criteria. All of these must genuinely pass, not just the happy path:
 - Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.
 - Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.
 - Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.
+- Given a finding whose dollar amount, percentage or day-count does not match a value in the parsed cost report and ledger facts within tolerance, When pipeline/grounding_guardrail.validate_ai_output_is_grounded runs against it, Then the finding is rejected before it reaches the specialist, per the passing tests in pipeline/test_grounding_guardrail.py.
 - Trust: Every finding cites real cost report lines and ledger totals present in the input.
 
 Handle these failure paths explicitly; none may surface as an unhandled exception or a silent no-op:
@@ -58,7 +60,7 @@ Handle these failure paths explicitly; none may surface as an unhandled exceptio
 - Ledger categories do not map to cost report lines
 - A long cost report exceeds the context budget
 
-Claude Opus 5.5 with structured output. Check every cited line against the parsed cost report before a finding is shown.
+Claude Opus 5.5 with structured output. Check every cited line against the parsed cost report before a finding is shown, then call pipeline/grounding_guardrail.validate_ai_output_is_grounded on the finding text against the same parsed facts before it is saved or displayed.
 
 When you believe the story is done:
 1. Tests cover the happy path and at least one failure path above.

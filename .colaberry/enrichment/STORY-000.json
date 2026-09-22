@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-000",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-22T20:47:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "systems",
+      "value": "The Command Center's entry point is index.html at the repo root, a one-line redirect to command-center/index.html, which holds the actual 9-tab app and reads .colaberry/plan.json, .colaberry/progress.json and .colaberry/manifest.json at runtime via fetch.",
+      "evidence": "index.html; command-center/assets/command-center.js#L18"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "The Command Center was originally built against a separate, hand-maintained plan (.hospulse/plan.json, its own build_plan.py generator). Repointed its DATA_DIR to .colaberry/ instead of maintaining two parallel plans behind one UI, since this story's own acceptance criteria specifically require .colaberry/plan.json and progress.json to be the runtime source.",
+      "rationale": "the platform's STORY-000 criteria name .colaberry/*.json explicitly; .hospulse/* remains as a private, separately-maintained build plan for actual implementation work, not read by the Command Center going forward",
+      "evidence": "command-center/assets/command-center.js#L18 (DATA_DIR)"
+    },
+    {
+      "statement": "This project's plan.json has no derived.owners field (unlike the earlier .hospulse plan it replaced as the data source). Added a client-side ownersFromPlan() fallback in command-center.js that derives the same {name, owns[]} shape from stories[].owner_agent when derived.owners is absent.",
+      "rationale": "keeps the Agents tab's 'story owners' table working without requiring the platform's plan generator to add a field it does not currently produce",
+      "evidence": "command-center/assets/command-center.js (ownersFromPlan); command-center/agents.html#L59"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "plan.schedule arrived null in the generated plan.seed.json (predating date finalization). Normalized it to an empty object in CommandCenter.init so every page degrades to blank fields instead of throwing, and manually backfilled the schedule/release/story due dates using the values given directly in the portal's own STORY-000 brief text, since the JSON had not been regenerated with them yet at the time of this build.",
+      "evidence": ".colaberry/plan.json (schedule, releases[].starts_on/ends_on, stories[].due_on); command-center/assets/command-center.js (schedule normalization in init())"
+    },
+    {
+      "statement": "No live browser was available in this build session to visually confirm rendering. Verification instead used node --check on every script block, a field-by-field trace of every plan.X / progress.X access in the codebase against the real committed JSON, and running the actual ownersFromPlan and verificationForRequirement functions in Node against the real data -- whose output exactly matched the story-owner breakdown given by hand in the portal's brief. This is real verification, but not the same as an observed render.",
+      "evidence": "manual verification performed in this session (node --check, field trace, Node logic replay); not captured as a committed automated test"
+    }
+  ],
+  "demonstrationEvidence": [],
+  "measurementEvents": []
+}

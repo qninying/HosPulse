@@ -1,0 +1,775 @@
+{
+  "schema_version": 2,
+  "project_name": "HosPulse",
+  "descriptor": "Early-warning intelligence system for rural and Critical Access Hospital management companies.",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "kind": "FUNC",
+      "cluster": "Data Import",
+      "priority": "must",
+      "statement": "The system must import public CMS HCRIS Medicare cost report files for rural and Critical Access Hospitals in Oklahoma and Texas.",
+      "from_dimensions": [
+        "inputs",
+        "systems"
+      ],
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-002",
+      "kind": "FUNC",
+      "cluster": "Data Processing",
+      "priority": "must",
+      "statement": "The system must compute operating margin, days cash on hand, and days in A/R per hospital per year from the imported data.",
+      "from_dimensions": [
+        "desired_outcome",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-001",
+        "STORY-002"
+      ]
+    },
+    {
+      "id": "REQ-003",
+      "kind": "FUNC",
+      "cluster": "Public Snapshot",
+      "priority": "must",
+      "statement": "The system must provide a free public Health Snapshot showing three years of trends for each hospital.",
+      "from_dimensions": [
+        "desired_outcome",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-003"
+      ]
+    },
+    {
+      "id": "REQ-004",
+      "kind": "FUNC",
+      "cluster": "Early Warning",
+      "priority": "must",
+      "statement": "The system must flag hospitals with operating margin below 0%, days cash on hand below 30, or days in A/R rising two years in a row.",
+      "from_dimensions": [
+        "desired_outcome",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-004"
+      ]
+    },
+    {
+      "id": "REQ-005",
+      "kind": "FUNC",
+      "cluster": "Early Warning",
+      "priority": "must",
+      "statement": "The system must store the exact values that triggered each flag.",
+      "from_dimensions": [
+        "desired_outcome",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-004"
+      ]
+    },
+    {
+      "id": "REQ-006",
+      "kind": "SAFE",
+      "cluster": "AI Briefing",
+      "priority": "must",
+      "statement": "The system must reject any AI-generated briefing containing a number not in the input data.",
+      "from_dimensions": [
+        "ai_opportunities",
+        "security_context"
+      ],
+      "fulfilled_by": [
+        "STORY-007"
+      ]
+    },
+    {
+      "id": "REQ-007",
+      "kind": "FUNC",
+      "cluster": "Operator Portal",
+      "priority": "must",
+      "statement": "The system must allow operators to upload monthly exports per hospital, including general ledger, A/R aging, denials summary, and staffing.",
+      "from_dimensions": [
+        "inputs",
+        "systems"
+      ],
+      "fulfilled_by": [
+        "STORY-005"
+      ]
+    },
+    {
+      "id": "REQ-008",
+      "kind": "SAFE",
+      "cluster": "Operator Portal",
+      "priority": "must",
+      "statement": "The system must enforce database row-level security so each management company only sees its own hospitals.",
+      "from_dimensions": [
+        "security_context",
+        "systems"
+      ],
+      "fulfilled_by": [
+        "STORY-006"
+      ]
+    },
+    {
+      "id": "REQ-009",
+      "kind": "SAFE",
+      "cluster": "Data Security",
+      "priority": "must",
+      "statement": "The system must reject any file containing patient names, birth dates, or record numbers before it is stored or logged.",
+      "from_dimensions": [
+        "security_context",
+        "inputs"
+      ],
+      "fulfilled_by": [
+        "STORY-010"
+      ]
+    },
+    {
+      "id": "REQ-010",
+      "kind": "FUNC",
+      "cluster": "Operator Portal",
+      "priority": "must",
+      "statement": "The system must detect duplicate uploads by file hash.",
+      "from_dimensions": [
+        "desired_outcome",
+        "systems"
+      ],
+      "fulfilled_by": [
+        "STORY-005"
+      ]
+    },
+    {
+      "id": "REQ-011",
+      "kind": "FUNC",
+      "cluster": "Data Normalization",
+      "priority": "must",
+      "statement": "The system must convert exports from different hospital systems into a standard set of monthly metrics.",
+      "from_dimensions": [
+        "desired_outcome",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-011"
+      ]
+    },
+    {
+      "id": "REQ-012",
+      "kind": "SAFE",
+      "cluster": "Data Normalization",
+      "priority": "must",
+      "statement": "The system must mark unknown formats as 'needs mapping' rather than guessing.",
+      "from_dimensions": [
+        "security_context",
+        "inputs"
+      ],
+      "fulfilled_by": [
+        "STORY-013"
+      ]
+    },
+    {
+      "id": "REQ-013",
+      "kind": "SAFE",
+      "cluster": "Data Traceability",
+      "priority": "must",
+      "statement": "The system must link every computed metric back to the file and row it came from.",
+      "from_dimensions": [
+        "security_context",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-002"
+      ]
+    },
+    {
+      "id": "REQ-014",
+      "kind": "FUNC",
+      "cluster": "Email Briefing",
+      "priority": "must",
+      "statement": "The system must send a weekly email briefing every Monday at 6:00 AM Central.",
+      "from_dimensions": [
+        "desired_outcome",
+        "outputs"
+      ],
+      "fulfilled_by": [
+        "STORY-008"
+      ]
+    },
+    {
+      "id": "REQ-015",
+      "kind": "SAFE",
+      "cluster": "System Reliability",
+      "priority": "must",
+      "statement": "The system must ensure every import, upload, normalization, and email is idempotent.",
+      "from_dimensions": [
+        "security_context",
+        "systems"
+      ],
+      "fulfilled_by": [
+        "STORY-009"
+      ]
+    },
+    {
+      "id": "REQ-016",
+      "kind": "FUNC",
+      "cluster": "Early Warning",
+      "priority": "must",
+      "statement": "The system must surface a slipping hospital at least 4 weeks earlier than the operator's current reporting cycle.",
+      "from_dimensions": [
+        "success_definition",
+        "desired_outcome"
+      ],
+      "fulfilled_by": [
+        "STORY-012"
+      ]
+    },
+    {
+      "id": "REQ-017",
+      "kind": "CONSTRAINT",
+      "cluster": "System Architecture",
+      "priority": "must",
+      "statement": "The system must use Supabase for auth, Postgres, and storage.",
+      "from_dimensions": [
+        "systems"
+      ],
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-018",
+      "kind": "CONSTRAINT",
+      "cluster": "System Architecture",
+      "priority": "must",
+      "statement": "The system must use Vercel for hosting and the Anthropic Claude API for AI.",
+      "from_dimensions": [
+        "systems"
+      ],
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-019",
+      "kind": "CONSTRAINT",
+      "cluster": "System Architecture",
+      "priority": "must",
+      "statement": "The system must use Resend for email delivery.",
+      "from_dimensions": [
+        "systems"
+      ],
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-020",
+      "kind": "CONSTRAINT",
+      "cluster": "System Architecture",
+      "priority": "must",
+      "statement": "The system must use Python for data work and Next.js for the web app.",
+      "from_dimensions": [
+        "systems"
+      ],
+      "fulfilled_by": []
+    }
+  ],
+  "releases": [
+    {
+      "key": "r0",
+      "demo": "Show import of CMS HCRIS data and computation of basic metrics with traceability.",
+      "goal": "Establish the data import and processing pipeline with basic security.",
+      "name": "Initial Setup and Data Import",
+      "week_end": 2,
+      "week_start": 1,
+      "story_ids": [
+        "STORY-001",
+        "STORY-002",
+        "STORY-010"
+      ],
+      "starts_on": "2026-09-24",
+      "ends_on": "2026-09-25",
+      "is_demo_target": true
+    },
+    {
+      "key": "r1",
+      "demo": "Demonstrate public access to health snapshots and flagging of hospitals based on financial metrics.",
+      "goal": "Provide public access to health snapshots and implement early warning flags.",
+      "name": "Public Snapshot and Early Warning",
+      "week_end": 4,
+      "week_start": 3,
+      "story_ids": [
+        "STORY-003",
+        "STORY-004",
+        "STORY-011",
+        "STORY-012"
+      ],
+      "starts_on": "2026-09-26",
+      "ends_on": "2026-09-27",
+      "is_demo_target": false
+    },
+    {
+      "key": "r2",
+      "demo": "Show operator upload functionality with security checks and data normalization.",
+      "goal": "Enable operator uploads with security and data normalization.",
+      "name": "Operator Portal and Security",
+      "week_end": 6,
+      "week_start": 5,
+      "story_ids": [
+        "STORY-005",
+        "STORY-006",
+        "STORY-013"
+      ],
+      "starts_on": "2026-09-27",
+      "ends_on": "2026-09-28",
+      "is_demo_target": false
+    },
+    {
+      "key": "r3",
+      "demo": "Demonstrate AI-generated briefings and weekly email delivery with grounding checks.",
+      "goal": "Generate AI briefings and send weekly email notifications.",
+      "name": "AI Briefing and Email Notifications",
+      "week_end": 8,
+      "week_start": 7,
+      "story_ids": [
+        "STORY-007",
+        "STORY-008"
+      ],
+      "starts_on": "2026-09-29",
+      "ends_on": "2026-09-30",
+      "is_demo_target": false
+    },
+    {
+      "key": "r4",
+      "demo": "Showcase idempotency across all processes and final system features.",
+      "goal": "Ensure system reliability and finalize all features.",
+      "name": "System Reliability and Final Touches",
+      "week_end": 10,
+      "week_start": 9,
+      "story_ids": [
+        "STORY-009"
+      ],
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-01",
+      "is_demo_target": false
+    }
+  ],
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Import CMS HCRIS Data",
+      "release": "r0",
+      "fulfills": [
+        "REQ-001",
+        "REQ-002"
+      ],
+      "narrative": "As a system admin, I want to import CMS HCRIS data, so that I can compute financial metrics for hospitals.",
+      "acceptance": [
+        "Given CMS HCRIS data is available, When the import process runs, Then the data is imported and metrics are computed.",
+        "Given invalid data format, When the import process runs, Then the data is rejected with an error message.",
+        "Trust: Every imported data point is traceable to its source file and row."
+      ],
+      "blocked_by": [],
+      "owner_agent": "System Admin",
+      "failure_paths": [
+        "Data format mismatch",
+        "Network failure during import",
+        "Data corruption in source files"
+      ],
+      "task_guidance": "Implement data import using Python scripts to read CMS HCRIS files and store results in Supabase Postgres.",
+      "due_on": "2026-09-24",
+      "due_baseline_on": "2026-09-24"
+    },
+    {
+      "id": "STORY-002",
+      "title": "Compute Financial Metrics and Ensure Trust Spine",
+      "release": "r0",
+      "fulfills": [
+        "REQ-002",
+        "REQ-013"
+      ],
+      "narrative": "As a system operator, I want to compute financial metrics from imported data, so that I can ensure accurate and trustworthy reporting.",
+      "acceptance": [
+        "Given a set of imported data, when the system computes financial metrics, then it should produce a standard set of monthly metrics.",
+        "Given a computed metric, when traced, then it should link back to the original file and row it came from.",
+        "Trust: Given any computation, when logged, then it should include an audit trail linking metrics to source data."
+      ],
+      "blocked_by": [],
+      "owner_agent": "system",
+      "failure_paths": [
+        "Data import fails",
+        "Metric computation error",
+        "Audit trail linkage failure"
+      ],
+      "task_guidance": "Implement computation logic to process imported data and generate metrics. Ensure each metric is linked to its source file and row in the audit trail.",
+      "due_on": "2026-09-25",
+      "due_baseline_on": "2026-09-25"
+    },
+    {
+      "id": "STORY-003",
+      "title": "Public Health Snapshot Access",
+      "release": "r1",
+      "fulfills": [
+        "REQ-003"
+      ],
+      "narrative": "As a public user, I want to access health snapshots, so that I can view hospital trends over three years.",
+      "acceptance": [
+        "Given a hospital name, When searched, Then the system displays three years of trends.",
+        "Given a non-existent hospital, When searched, Then the system returns a 'not found' message.",
+        "Trust: Each trend figure shows the data year and notes public data lag."
+      ],
+      "blocked_by": [
+        "STORY-002"
+      ],
+      "owner_agent": "Public User",
+      "failure_paths": [
+        "Hospital not found",
+        "Data retrieval errors",
+        "Incorrect trend calculations"
+      ],
+      "task_guidance": "Develop a Next.js frontend to display health snapshots with data from Supabase.",
+      "due_on": "2026-09-26",
+      "due_baseline_on": "2026-09-26"
+    },
+    {
+      "id": "STORY-004",
+      "title": "Implement Early Warning Flags",
+      "release": "r1",
+      "fulfills": [
+        "REQ-004",
+        "REQ-005"
+      ],
+      "narrative": "As a system admin, I want to implement early warning flags, so that I can identify hospitals needing attention.",
+      "acceptance": [
+        "Given computed metrics, When flagging criteria are met, Then the system flags the hospital.",
+        "Given missing data, When flagging criteria are checked, Then the system marks the hospital as 'not assessable'.",
+        "Trust: Each flag stores the exact values that triggered it."
+      ],
+      "blocked_by": [
+        "STORY-002"
+      ],
+      "owner_agent": "System Admin",
+      "failure_paths": [
+        "Incorrect flagging logic",
+        "Data inconsistency",
+        "Flag storage errors"
+      ],
+      "task_guidance": "Implement flagging logic in Python to evaluate metrics and store results in Supabase.",
+      "due_on": "2026-09-26",
+      "due_baseline_on": "2026-09-26"
+    },
+    {
+      "id": "STORY-005",
+      "title": "Operator Upload Functionality",
+      "release": "r2",
+      "fulfills": [
+        "REQ-007",
+        "REQ-010"
+      ],
+      "narrative": "As an operator, I want to upload monthly exports, so that I can provide updated financial data for my hospitals.",
+      "acceptance": [
+        "Given a valid export file, When uploaded, Then the system accepts and processes the file.",
+        "Given a duplicate file, When uploaded, Then the system rejects it with a duplicate message.",
+        "Trust: Each upload is checked for duplicates by file hash."
+      ],
+      "blocked_by": [
+        "STORY-004"
+      ],
+      "owner_agent": "Operator",
+      "failure_paths": [
+        "File format errors",
+        "Duplicate file uploads",
+        "Network issues during upload"
+      ],
+      "task_guidance": "Develop upload functionality using Next.js and Supabase storage, ensuring file hash checks for duplicates.",
+      "due_on": "2026-09-27",
+      "due_baseline_on": "2026-09-27"
+    },
+    {
+      "id": "STORY-006",
+      "title": "Enforce Row-Level Security",
+      "release": "r2",
+      "fulfills": [
+        "REQ-008"
+      ],
+      "narrative": "As a system admin, I want to enforce row-level security, so that each company only sees its own hospitals.",
+      "acceptance": [
+        "Given a company user, When accessing data, Then only their hospitals are visible.",
+        "Given an unauthorized access attempt, When accessing data, Then access is denied.",
+        "Trust: Row-level security is enforced on all data queries."
+      ],
+      "blocked_by": [
+        "STORY-005"
+      ],
+      "owner_agent": "System Admin",
+      "failure_paths": [
+        "Unauthorized data access",
+        "Incorrect security policies",
+        "Data leakage"
+      ],
+      "task_guidance": "Configure Supabase row-level security policies to restrict data access by company ID.",
+      "due_on": "2026-09-28",
+      "due_baseline_on": "2026-09-28"
+    },
+    {
+      "id": "STORY-007",
+      "title": "Generate AI Briefings",
+      "release": "r3",
+      "fulfills": [
+        "REQ-006"
+      ],
+      "narrative": "As a system admin, I want to generate AI briefings, so that I can provide a summary of hospitals at risk.",
+      "acceptance": [
+        "Given engine output, When generating a briefing, Then the briefing is created from valid data only.",
+        "Given invalid data in engine output, When generating a briefing, Then the briefing is rejected.",
+        "Trust: Each briefing is checked for grounding against the input data."
+      ],
+      "blocked_by": [
+        "STORY-006"
+      ],
+      "owner_agent": "System Admin",
+      "failure_paths": [
+        "API failure",
+        "Invalid data in briefings",
+        "Grounding check errors"
+      ],
+      "task_guidance": "Use the Anthropic Claude API to generate briefings and implement grounding checks before saving.",
+      "due_on": "2026-09-29",
+      "due_baseline_on": "2026-09-29"
+    },
+    {
+      "id": "STORY-008",
+      "title": "Send Weekly Email Briefings",
+      "release": "r3",
+      "fulfills": [
+        "REQ-014"
+      ],
+      "narrative": "As an operator, I want to receive weekly email briefings, so that I can stay informed about hospital statuses.",
+      "acceptance": [
+        "Given a briefing is ready, When the email job runs, Then the briefing is emailed at 6:00 AM Central.",
+        "Given an email delivery failure, When the email job runs, Then a retry is attempted.",
+        "Trust: Each email sent is logged with a timestamp and recipient."
+      ],
+      "blocked_by": [
+        "STORY-007"
+      ],
+      "owner_agent": "Operator",
+      "failure_paths": [
+        "Email delivery failures",
+        "Incorrect email content",
+        "Scheduling errors"
+      ],
+      "task_guidance": "Configure Resend for email delivery and schedule weekly email jobs using Vercel.",
+      "due_on": "2026-09-30",
+      "due_baseline_on": "2026-09-30"
+    },
+    {
+      "id": "STORY-009",
+      "title": "Ensure Idempotency Across Processes",
+      "release": "r4",
+      "fulfills": [
+        "REQ-015"
+      ],
+      "narrative": "As a system admin, I want to ensure idempotency across all processes, so that repeated runs do not alter outcomes.",
+      "acceptance": [
+        "Given a process runs twice, When executed, Then the outcome remains unchanged.",
+        "Given a process interruption, When resumed, Then the process completes without duplication.",
+        "Trust: Each process logs its execution state to prevent duplication."
+      ],
+      "blocked_by": [
+        "STORY-008"
+      ],
+      "owner_agent": "System Admin",
+      "failure_paths": [
+        "Duplicate data entries",
+        "Process interruptions",
+        "Incorrect idempotency logic"
+      ],
+      "task_guidance": "Implement idempotency checks and logging for all processes using Python and Supabase.",
+      "due_on": "2026-10-01",
+      "due_baseline_on": "2026-10-01"
+    },
+    {
+      "id": "STORY-010",
+      "title": "Reject Files with Sensitive Patient Information",
+      "release": "r0",
+      "fulfills": [
+        "REQ-009"
+      ],
+      "narrative": "As a system operator, I want the system to reject files containing sensitive patient information, so that I can ensure compliance with data protection regulations.",
+      "acceptance": [
+        "Given a file containing patient names, when uploaded, then the system should reject it before storage.",
+        "Given a file containing birth dates, when uploaded, then the system should reject it before logging.",
+        "Trust: Given a rejected file, when logged, then it should include an audit entry stating the reason for rejection."
+      ],
+      "blocked_by": [],
+      "owner_agent": "system",
+      "failure_paths": [
+        "File with patient names accepted",
+        "File with birth dates accepted",
+        "Audit entry missing for rejected file"
+      ],
+      "task_guidance": "Implement file validation logic to detect and reject files with patient names, birth dates, or record numbers before storage or logging.",
+      "due_on": "2026-09-25",
+      "due_baseline_on": "2026-09-25"
+    },
+    {
+      "id": "STORY-011",
+      "title": "Convert Hospital System Exports to Standard Metrics",
+      "release": "r1",
+      "fulfills": [
+        "REQ-011"
+      ],
+      "narrative": "As a system operator, I want to convert exports from different hospital systems into standard metrics, so that I can maintain consistency across reports.",
+      "acceptance": [
+        "Given an export from a hospital system, when processed, then it should convert into a standard set of monthly metrics.",
+        "Given an export with an unknown format, when processed, then it should be marked as 'needs mapping'.",
+        "Trust: Given a conversion, when logged, then it should include an audit entry linking the export to the resulting metrics."
+      ],
+      "blocked_by": [
+        "STORY-002"
+      ],
+      "owner_agent": "system",
+      "failure_paths": [
+        "Export conversion fails",
+        "Unknown format not flagged",
+        "Audit entry missing for conversion"
+      ],
+      "task_guidance": "Develop conversion logic to handle different hospital system exports and produce standard metrics. Implement a mechanism to flag unknown formats.",
+      "due_on": "2026-09-26",
+      "due_baseline_on": "2026-09-26"
+    },
+    {
+      "id": "STORY-012",
+      "title": "Surface Slipping Hospitals Early",
+      "release": "r1",
+      "fulfills": [
+        "REQ-016"
+      ],
+      "narrative": "As a system operator, I want to surface slipping hospitals at least 4 weeks earlier than the current reporting cycle, so that I can take timely action.",
+      "acceptance": [
+        "Given hospital performance data, when analyzed, then slipping hospitals should be surfaced at least 4 weeks earlier than the current cycle.",
+        "Given a hospital flagged as slipping, when reviewed, then it should provide details on performance decline.",
+        "Trust: Given a slipping hospital alert, when logged, then it should include an audit entry with the analysis date and details."
+      ],
+      "blocked_by": [
+        "STORY-011"
+      ],
+      "owner_agent": "system",
+      "failure_paths": [
+        "Slipping hospital not detected",
+        "Incorrect analysis of performance data",
+        "Audit entry missing for slipping alert"
+      ],
+      "task_guidance": "Implement analysis logic to detect and flag slipping hospitals based on performance data, ensuring early detection and logging.",
+      "due_on": "2026-09-27",
+      "due_baseline_on": "2026-09-27"
+    },
+    {
+      "id": "STORY-013",
+      "title": "Handle Unknown Format Files",
+      "release": "r2",
+      "fulfills": [
+        "REQ-012"
+      ],
+      "narrative": "As a data operator, I want the system to mark unknown formats as 'needs mapping', so that no incorrect assumptions are made about data structure.",
+      "acceptance": [
+        "Given an uploaded file with an unknown format, When the system processes the file, Then the file is marked as 'needs mapping'.",
+        "Given an uploaded file with a known format, When the system processes the file, Then the file is processed normally without marking.",
+        "Trust: Given any file processing, Then the system logs the format status and decision in the audit trail."
+      ],
+      "blocked_by": [
+        "STORY-005"
+      ],
+      "owner_agent": "Data Operator",
+      "failure_paths": [
+        "File format is not recognized and is incorrectly processed.",
+        "File format is recognized but incorrectly marked as 'needs mapping'.",
+        "Audit trail fails to log the format status.",
+        "System crashes when encountering an unknown format.",
+        "Operator is not notified of the 'needs mapping' status."
+      ],
+      "task_guidance": "Implement a check during file upload that verifies the format against known formats. If unknown, flag the file and log the event in the audit trail.",
+      "due_on": "2026-09-28",
+      "due_baseline_on": "2026-09-28"
+    }
+  ],
+  "agents": [],
+  "project": {
+    "name": "HosPulse",
+    "descriptor": "Early-warning intelligence system for rural and Critical Access Hospital management companies.",
+    "repo_url": "https://github.com/qninying/HosPulse",
+    "plan_version": 1,
+    "plan_sha256": "aac0b0c8623f3bc9098d9605536862a1296543bee0fafdfb3d69c21bc84f6704"
+  },
+  "schedule": {
+    "build_start": "2026-09-24",
+    "build_end": "2026-10-01",
+    "demo_day": "2026-10-08",
+    "build_weeks": 1,
+    "demo_release_key": "r0",
+    "roadmap_release_keys": [
+      "r1",
+      "r2",
+      "r3",
+      "r4"
+    ],
+    "prep": []
+  },
+  "derived": {
+    "measures": [],
+    "guardrails": [
+      {
+        "id": "REQ-006",
+        "statement": "The system must reject any AI-generated briefing containing a number not in the input data."
+      },
+      {
+        "id": "REQ-008",
+        "statement": "The system must enforce database row-level security so each management company only sees its own hospitals."
+      },
+      {
+        "id": "REQ-009",
+        "statement": "The system must reject any file containing patient names, birth dates, or record numbers before it is stored or logged."
+      },
+      {
+        "id": "REQ-012",
+        "statement": "The system must mark unknown formats as 'needs mapping' rather than guessing."
+      },
+      {
+        "id": "REQ-013",
+        "statement": "The system must link every computed metric back to the file and row it came from."
+      },
+      {
+        "id": "REQ-015",
+        "statement": "The system must ensure every import, upload, normalization, and email is idempotent."
+      }
+    ],
+    "systems": [
+      "Supabase",
+      "Postgres",
+      "Vercel",
+      "API",
+      "Resend",
+      "Next.js"
+    ],
+    "roles": [
+      "system admin",
+      "system operator",
+      "public user",
+      "operator",
+      "data operator"
+    ],
+    "counts": {
+      "requirements_total": 20,
+      "requirements_by_kind": {
+        "CONSTRAINT": 4,
+        "FUNC": 10,
+        "SAFE": 6
+      },
+      "stories_total": 13,
+      "releases_total": 5,
+      "agents_total": 0,
+      "failure_paths_total": 41,
+      "agents_by_autonomy": {}
+    }
+  }
+}

@@ -3,11 +3,11 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 13,
-    "stories_verified": 1,
-    "stories_submitted": 0,
+    "stories_verified": 0,
+    "stories_submitted": 1,
     "stories_in_progress": 0,
     "stories_not_started": 12,
-    "criteria_total": 53,
+    "criteria_total": 54,
     "criteria_passed": 5,
     "points_awarded": 0
   },
@@ -58,13 +58,13 @@
       "notes": "All 9 tabs render in sample and real mode (17 pages x 2 modes checked in the browser). .hospulse/plan.json, progress.json and manifest.json committed in aec0d10.",
       "updated_at": null,
       "verification": {
-        "state": "verified",
+        "state": "submitted",
         "criteria_passed": 5,
         "criteria_total": 5,
-        "verified_at": "2026-09-22T15:15:54-05:00",
-        "commit_sha": "f412d561c9ed6a3f3cbafafc138eee1b4e4ed651",
-        "commit_url": "https://github.com/qninying/HosPulse/commit/f412d561c9ed6a3f3cbafafc138eee1b4e4ed651",
-        "commit_at": "2026-09-22T15:15:54-05:00",
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
         "points_awarded": null,
         "outstanding": []
       }
@@ -502,7 +502,7 @@
     {
       "id": "STORY-011",
       "release": "r4",
-      "acceptance_total": 4,
+      "acceptance_total": 5,
       "criteria": [
         {
           "text": "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",
@@ -517,6 +517,10 @@
           "passed": false
         },
         {
+          "text": "Given a finding whose dollar amount, percentage or day-count does not match a value in the parsed cost report and ledger facts within tolerance, When pipeline/grounding_guardrail.validate_ai_output_is_grounded runs against it, Then the finding is rejected before it reaches the specialist, per the passing tests in pipeline/test_grounding_guardrail.py.",
+          "passed": false
+        },
+        {
           "text": "Trust: Every finding cites real cost report lines and ledger totals present in the input.",
           "passed": false
         }
@@ -528,7 +532,7 @@
       "verification": {
         "state": "not_started",
         "criteria_passed": 0,
-        "criteria_total": 4,
+        "criteria_total": 5,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
@@ -538,6 +542,7 @@
           "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",
           "Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.",
           "Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.",
+          "Given a finding whose dollar amount, percentage or day-count does not match a value in the parsed cost report and ledger facts within tolerance, When pipeline/grounding_guardrail.validate_ai_output_is_grounded runs against it, Then the finding is rejected before it reaches the specialist, per the passing tests in pipeline/test_grounding_guardrail.py.",
           "Trust: Every finding cites real cost report lines and ledger totals present in the input."
         ]
       }

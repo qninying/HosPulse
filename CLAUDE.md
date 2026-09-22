@@ -11,21 +11,20 @@ HosPulse: early-warning intelligence for rural hospital management companies. Fo
 - **No Claude/Anthropic attribution** on anything meant to be posted, shared, or sent to prospects.
 - **Never name a prospect or contact publicly** (LinkedIn, public repos) without their permission.
 
-## Where the truth lives
+## Two plans, on purpose, not a duplication to clean up
 
-- `.hospulse/plan.json`: requirements, stories, releases, agents, dates. The only planning file you edit by hand.
-- `docs/REQUIREMENTS.md`, `docs/STORIES.md`, `docs/TRACEABILITY.md`, `docs/stories/STORY-nnn.md`: generated from the plan. Never edit them directly.
-- `docs/stories/STORY-000.md`: the Command Center brief, hand-written.
-- `docs/DATA_CONTRACT.md`: the field-by-field spec of `.hospulse/*.json`. Read it before touching the Command Center.
-- `project-blueprint/`: architecture, tech stack, MVP plan, mockup, one-pager.
+There are two separate `plan.json`s in this repo, owned by different things:
 
-After changing the plan or ticking criteria, run `python3 scripts/build_plan.py`. Tests: `python3 -m unittest discover scripts`.
+- **`.colaberry/`** (`plan.json`, `progress.json`, `manifest.json`): owned by the Colaberry platform, refreshed on every portal sync. **This is what `command-center/` reads at runtime.** Verification, points, and what the portal shows all come from here. Don't hand-edit `plan.json` or `manifest.json`; the platform overwrites them. `progress.json`'s `criteria[].passed`, `files_touched`, `tests_added` and `notes` are yours to set per story; `verification` is the platform's.
+- **`.hospulse/`** (`plan.json`, generated `docs/`, `scripts/build_plan.py`): a separate, hand-maintained build plan for the actual engineering work (importer, engine, briefing agent, etc.), independent of what Colaberry tracks. It is not read by the Command Center. Keep using it for real implementation planning; after changing it, run `python3 scripts/build_plan.py` (tests: `python3 -m unittest discover scripts`).
 
-Read the requirement before writing code for a story. If the requirement is wrong, fix it in the plan: you are the architect here, not a typist.
+`docs/DATA_CONTRACT.md` is the field-by-field spec for both `plan.json` shapes (same schema). `docs/stories/STORY-000.md` is the Colaberry-generated Command Center brief; when it's superseded by a fresher portal version, overwrite it, it isn't hand-authored content to protect. `project-blueprint/`: architecture, tech stack, MVP plan, mockup, one-pager, plus `hospulse-docs-backup/`, a snapshot of the `.hospulse/`-generated docs taken before Colaberry's sync started overwriting `docs/`.
+
+Read the requirement before writing code for a story, in whichever plan owns it. If a requirement is wrong, fix it in that plan: you are the architect here, not a typist.
 
 ## Command Center
 
-`command-center/` is a static 9-tab site that reads `.hospulse/*.json` at runtime. Serve the repo root over HTTP (`python3 -m http.server 8765`) and open `/command-center/`; opening from disk cannot fetch the JSON. Nothing in it may show a number, connection or result the project has not actually produced.
+`command-center/` is a static 9-tab site. Entry point is `index.html` at the repo root (a redirect to `command-center/index.html`, per Colaberry's GitHub Pages convention). It reads `.colaberry/plan.json`, `progress.json` and `manifest.json` at runtime — serve the repo root over HTTP (`python3 -m http.server 8765`) and open `/command-center/`; opening from disk cannot fetch the JSON. `plan.derived.owners` may be absent (this platform's generator doesn't precompute it); `CommandCenter.ownersFromPlan()` derives it from `stories[].owner_agent` when missing, don't reintroduce a direct `plan.derived.owners` read. Nothing in it may show a number, connection or result the project has not actually produced.
 
 ## When you finish a story
 

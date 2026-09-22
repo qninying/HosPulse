@@ -1,0 +1,507 @@
+{
+  "schema_version": 2,
+  "project": "HosPulse",
+  "totals": {
+    "stories_total": 14,
+    "stories_verified": 0,
+    "stories_submitted": 0,
+    "stories_in_progress": 0,
+    "stories_not_started": 14,
+    "criteria_total": 0,
+    "criteria_passed": 0,
+    "points_awarded": 1982
+  },
+  "stories": [
+    {
+      "id": "STORY-000",
+      "release": null,
+      "acceptance_total": 5,
+      "criteria": [
+        {
+          "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
+          "passed": true
+        },
+        {
+          "text": "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
+          "passed": true
+        },
+        {
+          "text": "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
+          "passed": true
+        },
+        {
+          "text": "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
+          "passed": true
+        },
+        {
+          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
+          "passed": true
+        }
+      ],
+      "files_touched": [
+        "index.html",
+        "command-center/assets/command-center.js",
+        "command-center/agents.html",
+        ".colaberry/plan.json",
+        ".colaberry/progress.json",
+        ".colaberry/manifest.json"
+      ],
+      "tests_added": [],
+      "notes": "Command Center was already built (9 tabs under command-center/) against a separate hand-maintained plan; repointed DATA_DIR to .colaberry/ and added a root index.html redirect per this story's instructions. Verified via node --check on every script, a field-by-field trace of every plan.X/progress.X access against the real committed JSON, and running ownersFromPlan/verificationForRequirement in Node against the real data (owner breakdown matched the portal's own brief exactly). No live browser was available this session for a visual render check; see .colaberry/enrichment/STORY-000.json.",
+      "updated_at": "2026-09-22T20:47:00Z",
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 191,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-001",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given CMS HCRIS data is available, When the import process runs, Then the data is imported and metrics are computed.",
+          "passed": false
+        },
+        {
+          "text": "Given invalid data format, When the import process runs, Then the data is rejected with an error message.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Every imported data point is traceable to its source file and row.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 191,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-002",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a set of imported data, when the system computes financial metrics, then it should produce a standard set of monthly metrics.",
+          "passed": false
+        },
+        {
+          "text": "Given a computed metric, when traced, then it should link back to the original file and row it came from.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given any computation, when logged, then it should include an audit trail linking metrics to source data.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 191,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-003",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a hospital name, When searched, Then the system displays three years of trends.",
+          "passed": false
+        },
+        {
+          "text": "Given a non-existent hospital, When searched, Then the system returns a 'not found' message.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Each trend figure shows the data year and notes public data lag.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 191,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-004",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given computed metrics, When flagging criteria are met, Then the system flags the hospital.",
+          "passed": false
+        },
+        {
+          "text": "Given missing data, When flagging criteria are checked, Then the system marks the hospital as 'not assessable'.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Each flag stores the exact values that triggered it.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 191,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-005",
+      "release": "r2",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a valid export file, When uploaded, Then the system accepts and processes the file.",
+          "passed": false
+        },
+        {
+          "text": "Given a duplicate file, When uploaded, Then the system rejects it with a duplicate message.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Each upload is checked for duplicates by file hash.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 191,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-006",
+      "release": "r2",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a company user, When accessing data, Then only their hospitals are visible.",
+          "passed": false
+        },
+        {
+          "text": "Given an unauthorized access attempt, When accessing data, Then access is denied.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Row-level security is enforced on all data queries.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 129,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-007",
+      "release": "r3",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given engine output, When generating a briefing, Then the briefing is created from valid data only.",
+          "passed": false
+        },
+        {
+          "text": "Given invalid data in engine output, When generating a briefing, Then the briefing is rejected.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Each briefing is checked for grounding against the input data.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 129,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-008",
+      "release": "r3",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a briefing is ready, When the email job runs, Then the briefing is emailed at 6:00 AM Central.",
+          "passed": false
+        },
+        {
+          "text": "Given an email delivery failure, When the email job runs, Then a retry is attempted.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Each email sent is logged with a timestamp and recipient.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 129,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-009",
+      "release": "r4",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a process runs twice, When executed, Then the outcome remains unchanged.",
+          "passed": false
+        },
+        {
+          "text": "Given a process interruption, When resumed, Then the process completes without duplication.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Each process logs its execution state to prevent duplication.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 129,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-010",
+      "release": "r0",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given a file containing patient names, when uploaded, then the system should reject it before storage.",
+          "passed": false
+        },
+        {
+          "text": "Given a file containing birth dates, when uploaded, then the system should reject it before logging.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given a rejected file, when logged, then it should include an audit entry stating the reason for rejection.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 129,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-011",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given an export from a hospital system, when processed, then it should convert into a standard set of monthly metrics.",
+          "passed": false
+        },
+        {
+          "text": "Given an export with an unknown format, when processed, then it should be marked as 'needs mapping'.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given a conversion, when logged, then it should include an audit entry linking the export to the resulting metrics.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 129,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-012",
+      "release": "r1",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given hospital performance data, when analyzed, then slipping hospitals should be surfaced at least 4 weeks earlier than the current cycle.",
+          "passed": false
+        },
+        {
+          "text": "Given a hospital flagged as slipping, when reviewed, then it should provide details on performance decline.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given a slipping hospital alert, when logged, then it should include an audit entry with the analysis date and details.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": 62,
+        "outstanding": []
+      }
+    },
+    {
+      "id": "STORY-013",
+      "release": "r2",
+      "acceptance_total": 3,
+      "criteria": [
+        {
+          "text": "Given an uploaded file with an unknown format, When the system processes the file, Then the file is marked as 'needs mapping'.",
+          "passed": false
+        },
+        {
+          "text": "Given an uploaded file with a known format, When the system processes the file, Then the file is processed normally without marking.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given any file processing, Then the system logs the format status and decision in the audit trail.",
+          "passed": false
+        }
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "not_started",
+        "criteria_passed": 0,
+        "criteria_total": 0,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": []
+      }
+    }
+  ]
+}

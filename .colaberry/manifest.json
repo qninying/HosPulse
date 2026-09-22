@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-09-22T20:22:01.696Z",
+  "plan_version": 1,
+  "plan_sha256": "aac0b0c8623f3bc9098d9605536862a1296543bee0fafdfb3d69c21bc84f6704",
+  "correlation_id": "a2d9cf6e-9d8b-4297-af73-9c1ce6bac3fe",
+  "project_id": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "truth_revision": 1,
+  "files": [
+    {
+      "path": "docs/REQUIREMENTS.md",
+      "sha256": "9960c2b7175886fc31c96fb9c6468dfec1ac504b2c7fec1bfe636f5e537d7a4d"
+    },
+    {
+      "path": "docs/STORIES.md",
+      "sha256": "9f462bb9ca33fa0c864e8073e08bea1f1b36d11766ceee4ef780313a4a131415"
+    },
+    {
+      "path": "docs/TRACEABILITY.md",
+      "sha256": "47b178b369de009af83ac19e05d2d1a729e9eff5cbe75bd04e6005b93066c3f2"
+    },
+    {
+      "path": "docs/DATA_CONTRACT.md",
+      "sha256": "d56e89edcfe36725945d961cf3479b646507d1fa855bba0dcdfff3f8f8a658b0"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "d16bb815def4a965448ffcc08548d4ce58ecb10b26a8f8ff5bc42f89684bfbbc"
+    },
+    {
+      "path": "docs/stories/STORY-001.md",
+      "sha256": "ffad251d1163cf8bbddab9e970d996a34e688d604ead1103b5f18595a0c88fdd"
+    },
+    {
+      "path": "docs/stories/STORY-002.md",
+      "sha256": "6d9baec599687373f78c2f6fdad8c71123b149fc9925dbba70fa791ed43082b5"
+    },
+    {
+      "path": "docs/stories/STORY-003.md",
+      "sha256": "112f6e52b003e35f9057768b68947e8ecf13a6d809c16c2ec0565d29f3bd2870"
+    },
+    {
+      "path": "docs/stories/STORY-004.md",
+      "sha256": "b9f13132dcd896c3afeba83225605e35c7c811ddc685e94fcca64e4a129a8170"
+    },
+    {
+      "path": "docs/stories/STORY-005.md",
+      "sha256": "2b4e86568734081acc8a3446e0e2746fe9c4b67659718e7f7f3b65964159d038"
+    },
+    {
+      "path": "docs/stories/STORY-006.md",
+      "sha256": "150eab89f4dcef9b41092afd3569aced4d6f24ca82e985fc6221aa1c7a2d7a79"
+    },
+    {
+      "path": "docs/stories/STORY-007.md",
+      "sha256": "5d767d7552f85c98919a9b2bcff1db72167d17c2d948427528493a0c1e4e3305"
+    },
+    {
+      "path": "docs/stories/STORY-008.md",
+      "sha256": "c5cfb1219094d3550b8efb815870d793942b314e57a2e83cea312aa7f38e5e3f"
+    },
+    {
+      "path": "docs/stories/STORY-009.md",
+      "sha256": "e69655756a68ebe0e858b3e13201cba71f546626b8f6eb18766d3a275bded201"
+    },
+    {
+      "path": "docs/stories/STORY-010.md",
+      "sha256": "774e704c9e7f7ab544c029ac2982ba0064e3f9380134224c7a84f6ae115de05d"
+    },
+    {
+      "path": "docs/stories/STORY-011.md",
+      "sha256": "f92a34f56363f3eab6b35b685cb30f296d4bd958d10f005f4919a2f90eb0522a"
+    },
+    {
+      "path": "docs/stories/STORY-012.md",
+      "sha256": "d8524d56aa1a78d7d3a0fb32b68a8bf915824722974f5eeda3c141346f80a126"
+    },
+    {
+      "path": "docs/stories/STORY-013.md",
+      "sha256": "2a5b354ed82bac1326437b27ff694c43c6e87ed0e3c019fbdc1ba67c589a6480"
+    },
+    {
+      "path": "docs/stories/STORY-000.md",
+      "sha256": "be356e0d1a1e649954376fc57237dd9d74f0b7ba3fade16030f27cc3119cd512"
+    },
+    {
+      "path": ".colaberry/plan.json",
+      "sha256": "3469546e7d78822b35fc9312d6b54d8d42b989749d6eddffea79e39b0311b8f2"
+    },
+    {
+      "path": ".colaberry/progress.json",
+      "sha256": "6e825d07b2a03a05e9e402ae7b917eccf6dcb7d35d745104a2f9ab7eca78b1a2"
+    },
+    {
+      "path": ".colaberry/profile.json",
+      "sha256": "23a23259ef9033421479380c44c0c928276bb7066f34ef0fee30bb7661a46e88"
+    }
+  ]
+}

@@ -56,7 +56,7 @@
     function renderList({ plan, mode }) {
       const el = document.getElementById("cc-content");
       const agents = plan.agents || [];
-      const owners = (plan.derived && plan.derived.owners) || [];
+      const owners = CommandCenter.ownersFromPlan(plan);
       const agentCards = agents.length ? `<div class="cc-grid">` + agents.map((a) => `
         <a class="cc-card" href="agents.html?id=${encodeURIComponent(a.id)}">
           <h3>${esc(a.name)}${sampleBadge()}</h3>
