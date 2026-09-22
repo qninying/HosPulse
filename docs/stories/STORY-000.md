@@ -1,4 +1,42 @@
-# Read this first
+# STORY-000 — Build your Command Center
+
+As a builder, I want one page that shows what I am building and how far along it is, so that I can see my own project and demo from it.
+
+**Release:** ahead of the plan — this is day one, before your own stories
+**Owner:** you, with Claude Code
+**Blocked by:** nothing — this is the first thing you build
+
+## The requirement this satisfies
+
+None of yours, and that is deliberate. The Command Center is the window onto your
+system rather than a part of it, so it fulfils no requirement in
+`docs/REQUIREMENTS.md` and has no row in `docs/TRACEABILITY.md`. Everything it
+displays is read out of your own plan.
+
+## If you are Claude Code opening this file cold
+
+Everything you need is here. The full build brief is below, and your
+acceptance criteria are **already seeded** in `.colaberry/progress.json` under
+`STORY-000` with `"passed": false` — the platform has push access to
+this repo and writes that file on every sync.
+
+**Do not retype the criteria.** Find the story by its `id`, flip `passed` to `true`
+on each line that is genuinely true, and leave the rest `false`. Retyping is how the
+text drifts — a rewritten dash or a changed full stop makes a claim the platform
+cannot match, and the story stays unverified with your work already done. Step 3
+below has the exact procedure.
+
+**If this repo already has some of the Command Center in it, do not start over.**
+Step 2a below takes stock before anything is written and Step 2b repairs in place;
+work that is already right is kept, not replaced. And if this story's entry in `.colaberry/progress.json` carries
+fewer lines than the acceptance list at the foot of this file, this build predates a
+criterion that has since been added — there are 5 now.
+Copy the missing line in with `"passed": false` and earn it; do not tick it to make
+the two lists the same length.
+
+---
+
+## Read this first
 This is the first thing you build, before any part of the system itself. It is a Command Center: one page that shows what you are building, what it is meant to move, and how far along you are. You will keep it open for the rest of the programme, and it is what you demo from.
 Everything below is YOUR project, taken from the plan you just produced. Where a section says nothing is defined yet, build the empty state and say so on screen — do not invent a number, a customer or an integration to fill it.
 If some of it is already built, this same brief repairs it rather than replacing it — Step 2 starts by finding out how much is already there, and you only build the part that is missing.
@@ -13,7 +51,6 @@ Right now the portal only learns what you have finished when you press "Sync fro
 - Safe to run twice. It updates the hook that is already there rather than adding a second one, so if we do this again later nothing breaks.
 - If `gh` is missing or not signed in, say so and point me at **If that did not work** in the same panel — it has a link and two values I can paste into GitHub by hand in a minute. Do not try to install anything for me.
 - If I say skip it, skip it and start building. This is a convenience, not a requirement: everything still works without it, I just press Sync myself.
-
 ## Step 2 — take stock, then build
 Everything from here to Step 3 is the build itself. This story is the same whether you have built none of it, some of it, or all of it — what differs is how much is already done, so establish that first and then do only what is left.
 
@@ -93,14 +130,11 @@ None of these are connected on day one. The indicator must show that honestly ra
 ### 6. Project management
 Source: `plan.releases[]` for the bars — each carries `starts_on`, `ends_on`, `story_ids` and `is_demo_target`. `plan.schedule` has `build_start`, `build_end`, `demo_day` and `demo_release_key`. Per story, `plan.stories[].due_on` is the current date and `due_baseline_on` is the date it was FIRST given: show both, because the gap between them is slippage and a chart that quietly moves the target hides it. Status per story comes from the progress file, `stories[].verification.state`, which is one of `not_started`, `in_progress`, `submitted`, `verified`.
 A Gantt view of your releases, and under it every task with its due date. Tasks are clickable and open their own detail. Your releases:
-- **r0** Initial Setup and Data Import — 3 stories · 2026-09-24 → 2026-09-25
-- **r1** Public Snapshot and Early Warning — 4 stories · 2026-09-26 → 2026-09-27
-- **r2** Operator Portal and Security — 3 stories · 2026-09-27 → 2026-09-28
-- **r3** AI Briefing and Email Notifications — 2 stories · 2026-09-29 → 2026-09-30
-- **r4** System Reliability and Final Touches — 1 story · 2026-10-01 → 2026-10-01
-
-Demo day is 2026-10-08. Build ends 2026-10-01, and the week between them is demo prep.
-Mark **r0** as the demo target on the chart — releases after it are the roadmap, not this term's work.
+- **r0** Initial Setup and Data Import — 3 stories
+- **r1** Public Snapshot and Early Warning — 4 stories
+- **r2** Operator Portal and Security — 3 stories
+- **r3** AI Briefing and Email Notifications — 2 stories
+- **r4** System Reliability and Final Touches — 1 story
 
 ### 7. AI agents
 Source: `plan.agents[]` — one card each, with `name`, `purpose`, `trigger_type`, `trigger`, `inputs`, `outputs`, `autonomy_level`, `approval_gates`, `escalation_rules`, `skills` and `owns` (the story ids it owns, which you join back to the plan and the progress file). `plan.derived.counts.agents_by_autonomy` gives you the roster breakdown without counting them yourself.
@@ -167,23 +201,23 @@ Your full set, so the Command Center can show all of it:
 
 ## Your stories, in build order
 **r0 · Initial Setup and Data Import**
-- STORY-001 — Import CMS HCRIS Data (due 2026-09-24)
-- STORY-002 — Compute Financial Metrics and Ensure Trust Spine (due 2026-09-25)
-- STORY-010 — Reject Files with Sensitive Patient Information (due 2026-09-25)
+- STORY-001 — Import CMS HCRIS Data
+- STORY-002 — Compute Financial Metrics and Ensure Trust Spine
+- STORY-010 — Reject Files with Sensitive Patient Information
 **r1 · Public Snapshot and Early Warning**
-- STORY-003 — Public Health Snapshot Access (due 2026-09-26)
-- STORY-004 — Implement Early Warning Flags (due 2026-09-26)
-- STORY-011 — Convert Hospital System Exports to Standard Metrics (due 2026-09-26)
-- STORY-012 — Surface Slipping Hospitals Early (due 2026-09-27)
+- STORY-003 — Public Health Snapshot Access
+- STORY-004 — Implement Early Warning Flags
+- STORY-011 — Convert Hospital System Exports to Standard Metrics
+- STORY-012 — Surface Slipping Hospitals Early
 **r2 · Operator Portal and Security**
-- STORY-005 — Operator Upload Functionality (due 2026-09-27)
-- STORY-006 — Enforce Row-Level Security (due 2026-09-28)
-- STORY-013 — Handle Unknown Format Files (due 2026-09-28)
+- STORY-005 — Operator Upload Functionality
+- STORY-006 — Enforce Row-Level Security
+- STORY-013 — Handle Unknown Format Files
 **r3 · AI Briefing and Email Notifications**
-- STORY-007 — Generate AI Briefings (due 2026-09-29)
-- STORY-008 — Send Weekly Email Briefings (due 2026-09-30)
+- STORY-007 — Generate AI Briefings
+- STORY-008 — Send Weekly Email Briefings
 **r4 · System Reliability and Final Touches**
-- STORY-009 — Ensure Idempotency Across Processes (due 2026-10-01)
+- STORY-009 — Ensure Idempotency Across Processes
 
 ## Done means — these exact lines
 These are the acceptance criteria the platform checks. They go into `.colaberry/progress.json` **word for word** — they are matched by text, so a reworded line does not count.
@@ -210,6 +244,67 @@ These are the acceptance criteria the platform checks. They go into `.colaberry/
 - You are about to hard-code a KPI value, a customer name, or an integration status.
 - The guardrails tab is empty because your plan has no SAFE requirement — that is worth fixing before you build further.
 
+## When you finish: record what this story taught the project
+Before you start, read `.colaberry/plan.json` and `docs/stories/STORY-000.md` (the section
+"What the platform understands about this project"). That is the current truth. Note anything
+this story adds to it: a system it turns out to talk to, a decision you had to make, a limit you
+discovered, a role or approval point that appeared.
+
+When the acceptance criteria pass, write `.colaberry/enrichment/STORY-000.json` with exactly this shape:
+
+```
+{
+  "schemaVersion": "1",
+  "projectId": "<project_id from .colaberry/manifest.json>",
+  "storyId": "STORY-000",
+  "projectTruthBaseRevision": 0,
+  "observedAt": "<ISO timestamp>",
+  "sourceCommitSha": "<sha of your last commit, or null>",
+  "factProposals": [
+    {
+      "dimension": "integrations",
+      "value": "Reads open tickets from the Zendesk API.",
+      "evidence": "src/zendesk/client.ts"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Poll every 5 minutes rather than subscribe to webhooks.",
+      "rationale": "no webhook access in the sandbox",
+      "evidence": "src/poll.ts"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Attachments over 10MB are skipped.",
+      "evidence": "src/zendesk/client.ts#L40"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "zendesk.client.test.ts"
+    }
+  ],
+  "measurementEvents": []
+}
+```
+
+Rules for that file:
+- Only what this story's work actually shows. Each entry names the file, commit or test that
+  proves it. No evidence, no entry.
+- `dimension` is one of: problem, desired_outcome, actors, current_workflow, inputs, outputs,
+  data, systems, integrations, pain_points, exceptions, approval_points, security_context,
+  ai_opportunities, human_only_decisions, assumptions, unknowns, constraints,
+  success_definition, delivery_profile.
+- Never claim a business result. What the business wanted, what hurt before, what "success"
+  means: those are the student's statements, not the build's, and the platform refuses them
+  from this file.
+- If you found something that contradicts the truth, still write it: the platform files it as
+  a question for the student rather than replacing what they confirmed.
+- `projectTruthBaseRevision` is `truth_revision` from `.colaberry/manifest.json`, or 0 if absent.
+- Commit it with the story. The platform reads it on push; pushing it twice changes nothing.
+
 ## How I want you to work
 - Build it so the data comes from one place. You will point it at your real system as you build, and you should not be rewriting tabs to do it.
 - Show me the Overview tab first and stop. Get that right before building the other eight.
@@ -218,7 +313,44 @@ These are the acceptance criteria the platform checks. They go into `.colaberry/
 
 ## Step 3 — finish it, so the platform can confirm it
 A story is confirmed when BOTH halves are true: every acceptance criterion is ticked in `.colaberry/progress.json` — each one because it is genuinely true — AND a commit names the story. Neither on its own is enough.
-- Create or update `.colaberry/progress.json` so it carries this story with every **Done means** line present word for word. Only tick a line when it is actually true — the file is the claim, the commit is the evidence.
+- Create or update `.colaberry/progress.json` so it carries this story with every **Done means** line present word for word. Only tick a line when it is actually true — the file is the claim, the commit is the evidence:
+
+```json
+{
+  "schema_version": 2,
+  "_how_to_use": "Start with every criterion false — that is the correct starting state, not an unfinished one. false means \"not claimed\": either not done, or done but not yet checked. Set one to true only after you have read the code and confirmed it is genuinely true today. Nothing is lost by leaving a line false; a story sitting at 3 of 5 reports honestly and the portal shows you which two are left. Do not retype the criterion text — flip the boolean beside it.",
+  "stories": [
+    {
+      "id": "STORY-000",
+      "criteria": [
+        {
+          "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
+          "passed": false
+        },
+        {
+          "text": "Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.",
+          "passed": false
+        },
+        {
+          "text": "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
+          "passed": false
+        },
+        {
+          "text": "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
+          "passed": false
+        },
+        {
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
+          "passed": false
+        }
+      ]
+    }
+  ]
+}
+```
+
+That is the starting state: nothing claimed yet. Every line is `false` because nothing has been confirmed, not because the work is bad — a file like that is correct, not unfinished. Set a line to `true` only when it is genuinely true in the repo today, and leave the rest unticked. Leaving a line `false` costs nothing: a story at 3 of 5 reports honestly and the portal tells you which ones are left.
+
 - **If the file already carries this story, reconcile it — do not rewrite it.** Add any **Done means** line that is missing with `"passed": false`, leave the ticks that are already there alone, and change a `false` to `true` only for a line you have just made true. A criterion added after this build started begins unticked like every other one; it does not inherit a tick from the lines around it.
 - **Bringing an older build up to the current standard is not permission to tick the new lines.** A line is ticked because it is true in the repo today — never because the rest of the story is finished, never because the build looks done, and never to make the count come out even. Leave every line you have not actually satisfied unticked, and tell me which ones and why.
 - Commit with the story id in the message — `git commit -m "STORY-000: build the Command Center"` (a `Story: STORY-000` line in the body works too) — then push.
@@ -240,3 +372,22 @@ Use your default branch if it is not `main`.
 - **If it refuses because the repo is private,** Pages needs a paid plan for private repos. Tell me plainly that it was refused and carry on — do not retry it, and do not ask me to upgrade anything. The story still verifies without it.
 - You do not need to find the address yourself. The first build takes a minute or two; the platform checks after each push and after a Sync, and the **Command Center** link appears in the portal header once the site actually answers.
 - What it asks for is `index.html` at the site root — `https://<your-github-name>.github.io/<your-repo>/`. That is the reason the entry point goes at the root of the repo rather than in a subfolder, and it is the whole of the reason. If yours is one directory down the platform still finds it, but the address in your header is the longer one.
+
+
+## Acceptance — your stop condition
+
+These are the exact lines the platform checks, character for character. Tick a box
+here as it genuinely passes, and set the matching `passed` flag in
+`.colaberry/progress.json` — the JSON is what the platform reads, this list is for you.
+If a `text` value in that file does not match its line here, the platform ignores it
+and the story cannot verify; make the JSON match this list rather than the other way
+round.
+
+- [ ] Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.
+- [ ] Given sample mode, when any tab is shown, then the sample data is visibly labelled as sample.
+- [ ] Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.
+- [ ] Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.
+- [ ] Trust — no tab shows a number, a connection or a result the project has not actually produced.
+
+When every box above is ticked **and** a commit names the story, the platform
+confirms it on its own — within about ten seconds if you did Step 1.

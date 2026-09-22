@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 0,
+    "stories_verified": 2,
     "stories_submitted": 0,
-    "stories_in_progress": 0,
-    "stories_not_started": 14,
-    "criteria_total": 0,
-    "criteria_passed": 0,
-    "points_awarded": 1982
+    "stories_in_progress": 12,
+    "stories_not_started": 0,
+    "criteria_total": 44,
+    "criteria_passed": 8,
+    "points_awarded": 2096
   },
   "stories": [
     {
@@ -34,7 +34,7 @@
           "passed": true
         },
         {
-          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
       ],
@@ -50,14 +50,14 @@
       "notes": "Command Center was already built (9 tabs under command-center/) against a separate hand-maintained plan; repointed DATA_DIR to .colaberry/ and added a root index.html redirect per this story's instructions. Verified via node --check on every script, a field-by-field trace of every plan.X/progress.X access against the real committed JSON, and running ownersFromPlan/verificationForRequirement in Node against the real data (owner breakdown matched the portal's own brief exactly). No live browser was available this session for a visual render check; see .colaberry/enrichment/STORY-000.json.",
       "updated_at": "2026-09-22T20:47:00Z",
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
-        "criteria_total": 0,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 191,
+        "state": "verified",
+        "criteria_passed": 5,
+        "criteria_total": 5,
+        "verified_at": "2026-09-22T20:49:47.238Z",
+        "commit_sha": "d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
+        "commit_at": "2026-09-22T20:49:43Z",
+        "points_awarded": 248,
         "outstanding": []
       }
     },
@@ -91,14 +91,14 @@
       "notes": "Real data: 256 OK/TX rural/CAH hospitals, 260 cost-report-years, live in Supabase, verified idempotent (identical content hash across two runs from a clean state). Every worksheet/line/column code cited against the CMS data dictionary and confirmed against a real downloaded report before being trusted. Two real bugs found by checking my own output rather than trusting the first run: a DuckDB lazy-evaluation bug (fixed by materializing pivots into real temp tables instead of reusing a shared view name) and a fiscal-year mislabeling bug (CMS's FY2024 download bucket is when CMS processed a report, not each report's own period end -- fixed by deriving fiscal_year from fy_end_dt). Only FY2024 has been run so far; STORY-002 (early-warning flags) and expanding to 3 years remain.",
       "updated_at": "2026-09-22T22:10:00Z",
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
-        "criteria_total": 0,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 191,
+        "state": "verified",
+        "criteria_passed": 3,
+        "criteria_total": 3,
+        "verified_at": "2026-09-22T21:55:11.468Z",
+        "commit_sha": "72826775cc08e35dc9b35d7a4f52c028ec5b27bb",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/72826775cc08e35dc9b35d7a4f52c028ec5b27bb",
+        "commit_at": "2026-09-22T21:55:07Z",
+        "points_awarded": 248,
         "outstanding": []
       }
     },
@@ -125,15 +125,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 191,
-        "outstanding": []
+        "outstanding": [
+          "Given a set of imported data, when the system computes financial metrics, then it should produce a standard set of monthly metrics.",
+          "Given a computed metric, when traced, then it should link back to the original file and row it came from.",
+          "Trust: Given any computation, when logged, then it should include an audit trail linking metrics to source data."
+        ]
       }
     },
     {
@@ -159,15 +163,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 191,
-        "outstanding": []
+        "outstanding": [
+          "Given a hospital name, When searched, Then the system displays three years of trends.",
+          "Given a non-existent hospital, When searched, Then the system returns a 'not found' message.",
+          "Trust: Each trend figure shows the data year and notes public data lag."
+        ]
       }
     },
     {
@@ -193,15 +201,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 191,
-        "outstanding": []
+        "outstanding": [
+          "Given computed metrics, When flagging criteria are met, Then the system flags the hospital.",
+          "Given missing data, When flagging criteria are checked, Then the system marks the hospital as 'not assessable'.",
+          "Trust: Each flag stores the exact values that triggered it."
+        ]
       }
     },
     {
@@ -227,15 +239,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 191,
-        "outstanding": []
+        "outstanding": [
+          "Given a valid export file, When uploaded, Then the system accepts and processes the file.",
+          "Given a duplicate file, When uploaded, Then the system rejects it with a duplicate message.",
+          "Trust: Each upload is checked for duplicates by file hash."
+        ]
       }
     },
     {
@@ -261,15 +277,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 129,
-        "outstanding": []
+        "outstanding": [
+          "Given a company user, When accessing data, Then only their hospitals are visible.",
+          "Given an unauthorized access attempt, When accessing data, Then access is denied.",
+          "Trust: Row-level security is enforced on all data queries."
+        ]
       }
     },
     {
@@ -295,15 +315,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 129,
-        "outstanding": []
+        "outstanding": [
+          "Given engine output, When generating a briefing, Then the briefing is created from valid data only.",
+          "Given invalid data in engine output, When generating a briefing, Then the briefing is rejected.",
+          "Trust: Each briefing is checked for grounding against the input data."
+        ]
       }
     },
     {
@@ -329,15 +353,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 129,
-        "outstanding": []
+        "outstanding": [
+          "Given a briefing is ready, When the email job runs, Then the briefing is emailed at 6:00 AM Central.",
+          "Given an email delivery failure, When the email job runs, Then a retry is attempted.",
+          "Trust: Each email sent is logged with a timestamp and recipient."
+        ]
       }
     },
     {
@@ -363,15 +391,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 129,
-        "outstanding": []
+        "outstanding": [
+          "Given a process runs twice, When executed, Then the outcome remains unchanged.",
+          "Given a process interruption, When resumed, Then the process completes without duplication.",
+          "Trust: Each process logs its execution state to prevent duplication."
+        ]
       }
     },
     {
@@ -397,15 +429,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 129,
-        "outstanding": []
+        "outstanding": [
+          "Given a file containing patient names, when uploaded, then the system should reject it before storage.",
+          "Given a file containing birth dates, when uploaded, then the system should reject it before logging.",
+          "Trust: Given a rejected file, when logged, then it should include an audit entry stating the reason for rejection."
+        ]
       }
     },
     {
@@ -431,15 +467,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "cbac954e43ccfc7244b40407877349d94d119d88",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/cbac954e43ccfc7244b40407877349d94d119d88",
+        "commit_at": "2026-09-22T20:49:43Z",
         "points_awarded": 129,
-        "outstanding": []
+        "outstanding": [
+          "Given an export from a hospital system, when processed, then it should convert into a standard set of monthly metrics.",
+          "Given an export with an unknown format, when processed, then it should be marked as 'needs mapping'.",
+          "Trust: Given a conversion, when logged, then it should include an audit entry linking the export to the resulting metrics."
+        ]
       }
     },
     {
@@ -465,15 +505,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": 62,
-        "outstanding": []
+        "outstanding": [
+          "Given hospital performance data, when analyzed, then slipping hospitals should be surfaced at least 4 weeks earlier than the current cycle.",
+          "Given a hospital flagged as slipping, when reviewed, then it should provide details on performance decline.",
+          "Trust: Given a slipping hospital alert, when logged, then it should include an audit entry with the analysis date and details."
+        ]
       }
     },
     {
@@ -499,15 +543,19 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "not_started",
+        "state": "in_progress",
         "criteria_passed": 0,
-        "criteria_total": 0,
+        "criteria_total": 3,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": null,
-        "outstanding": []
+        "outstanding": [
+          "Given an uploaded file with an unknown format, When the system processes the file, Then the file is marked as 'needs mapping'.",
+          "Given an uploaded file with a known format, When the system processes the file, Then the file is processed normally without marking.",
+          "Trust: Given any file processing, Then the system logs the format status and decision in the audit trail."
+        ]
       }
     }
   ]
