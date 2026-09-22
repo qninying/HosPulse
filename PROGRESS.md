@@ -54,6 +54,12 @@
   - Verification: schema migration applied live; backfilled all 652 existing rows (0 left with empty provenance); confirmed 18 rows genuinely have `cash_on_hand: not_reported` (a real distinction, not lost as an ambiguous NULL); full 3-fiscal-year re-run produced an identical content hash including provenance (idempotent); `pytest pipeline/` 30/30 passed; `.hospulse/progress.json` STORY-001 now 4/4, genuinely
   - Notes: real bug found while backfilling, not left in -- `hospitals` (keyed on `provider_ccn` alone) crashed on FY2025 with Postgres's "ON CONFLICT DO UPDATE command cannot affect row a second time," because a single run's batch can legitimately contain one hospital across two real fiscal years (the same split-year pattern found earlier in STORY-001). Fixed with a second, hospitals-scoped dedupe preferring the most recent fiscal year.
 
+- [x] STORY-002: tick the genuinely-true criteria, flag the "monthly metrics" mismatch
+  - Date: 2026-09-22
+  - What changed: `.colaberry/progress.json` STORY-002 criteria 2 ("traced back to file and row") and 3 ("audit trail linking metrics to source data") marked true -- both were already genuinely built while hardening STORY-001 (`operating_margin_pct`/`days_cash_on_hand`/`days_in_ar` as `GENERATED ALWAYS AS STORED` columns; `metric_provenance` jsonb with per-metric worksheet/line/column/status). `.colaberry/enrichment/STORY-002.json` written with evidence-cited fact proposals, decisions and the limitation below.
+  - Verification: field-level trace of `metric_provenance` against all 652 live Supabase rows (0 left empty, 18 confirmed genuinely `not_reported`); `pytest pipeline/` 30/30 passed
+  - Notes: criterion 1 ("produce a standard set of **monthly** metrics") left unticked on purpose, not rounded up. CMS HCRIS cost reports are annual-only -- there is no month anywhere in the source data to slice. REQ-002 (the requirement STORY-002 actually fulfills) correctly says "per hospital per year"; "monthly metrics" is REQ-011/STORY-011's language (operator-uploaded monthly exports, release r2) and appears to have been copied into this story's acceptance criteria by mistake. Raised with the user and confirmed before leaving the line unticked rather than rewording or faking it.
+
 ## Next
 
 - [ ] Coffee with prospect #1 (4 validation checks: pain, data access, budget owner, existing tools)

@@ -113,17 +113,23 @@
         },
         {
           "text": "Given a computed metric, when traced, then it should link back to the original file and row it came from.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Given any computation, when logged, then it should include an audit trail linking metrics to source data.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "pipeline/schema.sql",
+        "pipeline/hcris_import.py",
+        "pipeline/test_hcris_import.py"
+      ],
+      "tests_added": [
+        "pipeline/test_hcris_import.py (30 tests total, including the provider-scoped dedupe fixes found while backfilling provenance)"
+      ],
+      "notes": "Criteria 2 and 3 were already genuinely true in the repo, built while hardening STORY-001: cost_report_years.operating_margin_pct/days_cash_on_hand/days_in_ar (REQ-002) are Postgres GENERATED ALWAYS AS STORED columns, so they can never drift from source_rpt_rec_num/source_file/metric_provenance. metric_provenance is a per-metric jsonb {wksht_cd, line_num, clmn_num, status} recording exactly which worksheet/line/column each value came from and whether it was ok/not_reported/unparseable -- live-backfilled across all 652 existing rows, 18 confirmed genuinely not_reported. Criterion 1 is left false on purpose: it asks for 'monthly metrics', but CMS HCRIS cost reports carry one annual figure per hospital fiscal year -- there is no month in this data source to slice. REQ-002 (the requirement this story fulfills) correctly says 'per hospital per year'; 'monthly metrics' is REQ-011/STORY-011's language (operator-uploaded monthly exports, release r2), and appears to have been copied into this story's acceptance criteria by mistake. Confirmed with the user before leaving it unticked rather than rewording or faking it.",
+      "updated_at": "2026-09-22T23:15:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

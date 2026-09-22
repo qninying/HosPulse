@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-002",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-22T23:15:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "data",
+      "value": "CMS HCRIS cost reports carry exactly one figure per metric per hospital fiscal year -- there is no month field anywhere in the source data, so 'monthly metrics' cannot be derived from this import without inventing data.",
+      "evidence": "pipeline/schema.sql#cost_report_years (fiscal_year int, no month column); REQ-002 itself says 'per hospital per year'"
+    },
+    {
+      "dimension": "outputs",
+      "value": "operating_margin_pct, days_cash_on_hand, and days_in_ar are Postgres GENERATED ALWAYS AS ... STORED columns computed directly from the imported raw values, so a stored metric can never drift from its inputs.",
+      "evidence": "pipeline/schema.sql#operating_margin_pct, #days_cash_on_hand, #days_in_ar"
+    },
+    {
+      "dimension": "outputs",
+      "value": "Every computed metric carries field-level provenance, not just a source file/report id: a jsonb column recording the exact {worksheet, line, column} it was read from and whether that line was present (ok), absent (not_reported), or present but unparseable (unparseable).",
+      "evidence": "pipeline/schema.sql#metric_provenance; pipeline/hcris_import.py (extract_metrics __found tracking)"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "A NULL metric value is never left ambiguous -- metric_provenance always states why it is NULL (not_reported vs unparseable), rather than treating every missing value the same way.",
+      "rationale": "a NULL that could mean 'line wasn't filed' or 'line was garbled' is not trustworthy for a system whose entire premise is trust; a hospital financial system needs to distinguish those cases",
+      "evidence": "pipeline/hcris_import.py#extract_metrics; live backfill confirmed 18 of 652 rows genuinely not_reported for cash_on_hand"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "This story's own acceptance criteria asks for a 'standard set of monthly metrics', but the CMS HCRIS data this story imports is annual-only. That criterion is left unticked rather than reworded or satisfied with invented data. Monthly granularity belongs to a different, later data source: operator-uploaded internal exports (REQ-007/REQ-011, STORY-005/STORY-011, release r2), which is where 'monthly metrics' actually applies.",
+      "evidence": ".colaberry/progress.json STORY-002 criteria[0]; REQ-002 vs REQ-011 wording in .colaberry/plan.json"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_hcris_import.py (30 tests, including the provider-scoped dedupe fix found while backfilling provenance); live backfill of all 652 existing cost_report_years rows to non-empty metric_provenance, confirmed via direct query (0 rows left empty, 18 rows genuinely not_reported for cash_on_hand); documented in PROGRESS.md's 2026-09-22 'Close STORY-001's two remaining gaps' entry"
+    }
+  ],
+  "measurementEvents": []
+}
