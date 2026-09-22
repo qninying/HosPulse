@@ -1,4 +1,7 @@
-# HosPulse
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/logo-on-dark.svg">
+  <img alt="HosPulse" src="brand/logo.svg" height="44">
+</picture>
 
 Early-warning intelligence for companies that manage rural hospitals.
 
