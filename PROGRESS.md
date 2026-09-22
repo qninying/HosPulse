@@ -48,6 +48,14 @@
 
 ## Next
 
+- [x] Close STORY-001's two remaining gaps: per-metric provenance and a real "missing" reason
+  - Date: 2026-09-22
+  - What changed: `pipeline/schema.sql` -- `metric_provenance jsonb` column on `cost_report_years` (migration via `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, safe against the existing production table); `pipeline/hcris_import.py` -- pivot now tracks whether each worksheet line was present at all (not just its parsed value), builds a per-row provenance dict (`{wksht_cd, line_num, clmn_num, status}` per metric, status = ok / not_reported / unparseable), and a new `_dedupe_by_provider()` fixes a real crash found while backfilling; `pipeline/test_hcris_import.py` (2 more tests, 30 total)
+  - Verification: schema migration applied live; backfilled all 652 existing rows (0 left with empty provenance); confirmed 18 rows genuinely have `cash_on_hand: not_reported` (a real distinction, not lost as an ambiguous NULL); full 3-fiscal-year re-run produced an identical content hash including provenance (idempotent); `pytest pipeline/` 30/30 passed; `.hospulse/progress.json` STORY-001 now 4/4, genuinely
+  - Notes: real bug found while backfilling, not left in -- `hospitals` (keyed on `provider_ccn` alone) crashed on FY2025 with Postgres's "ON CONFLICT DO UPDATE command cannot affect row a second time," because a single run's batch can legitimately contain one hospital across two real fiscal years (the same split-year pattern found earlier in STORY-001). Fixed with a second, hospitals-scoped dedupe preferring the most recent fiscal year.
+
+## Next
+
 - [ ] Coffee with prospect #1 (4 validation checks: pain, data access, budget owner, existing tools)
 - [ ] STORY-002: early-warning flags on top of the imported metrics
 - [ ] Health Snapshot v0 from public CMS HCRIS cost report data (OK + TX rural hospitals)

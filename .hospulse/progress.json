@@ -3,12 +3,12 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 13,
-    "stories_verified": 0,
+    "stories_verified": 1,
     "stories_submitted": 0,
-    "stories_in_progress": 1,
+    "stories_in_progress": 0,
     "stories_not_started": 12,
     "criteria_total": 49,
-    "criteria_passed": 2,
+    "criteria_passed": 4,
     "points_awarded": 0
   },
   "stories": [
@@ -63,11 +63,11 @@
         },
         {
           "text": "Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Every stored metric records the cost report ID, worksheet and line it was computed from.",
-          "passed": false
+          "passed": true
         }
       ],
       "files_touched": [
@@ -79,21 +79,18 @@
       "tests_added": [
         "pipeline/test_hcris_import.py (12 tests)"
       ],
-      "notes": "3 of 4 criteria genuinely met. Latest three years (2023, 2024, 2025) imported: 274 OK/TX rural/CAH hospitals, 652 cost-report-years, live in Supabase. Not every hospital has a row in all three years -- real reporting gaps (a hospital not yet open, a fiscal-year-end change, a closure), not a bug; forcing a row per hospital per year would mean inventing data. Idempotency verified three runs deep (content hash stable across runs 2 and 3) plus a live-tested guard against a cross-run regression (an older file re-run after a newer one can no longer overwrite a more recent report). Still open: missing values are NULL (never guessed) but with no explicit 'reason' column; worksheet/line provenance lives in code (pipeline/hcris_import.py's NUMERIC_FIELDS) rather than per-row in the database.",
+      "notes": "4 of 4, genuinely. metric_provenance (jsonb) added to cost_report_years: for each of the 5 raw metrics, the exact {wksht_cd, line_num, clmn_num} it was read from and a status of ok / not_reported (line absent from the report) / unparseable (present but invalid) -- turns a bare NULL into a specific, checkable reason, and makes every row self-describing without needing to trust code elsewhere hasn't drifted. Backfilled across all 652 existing rows. Found and fixed one more real bug while backfilling: the hospitals table (keyed on provider_ccn alone) crashed on FY2025 with a Postgres 'cannot affect row a second time' error, because a single run's batch can legitimately contain one hospital across two real fiscal years -- fixed with a second, hospitals-scoped dedupe. Re-verified idempotent (identical hash, provenance included) across a full 3-year re-run.",
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 2,
+        "state": "verified",
+        "criteria_passed": 4,
         "criteria_total": 4,
-        "verified_at": null,
-        "commit_sha": "72826775cc08e35dc9b35d7a4f52c028ec5b27bb",
-        "commit_url": "https://github.com/qninying/HosPulse/commit/72826775cc08e35dc9b35d7a4f52c028ec5b27bb",
-        "commit_at": "2026-09-22T16:55:07-05:00",
+        "verified_at": "2026-09-22T17:04:46-05:00",
+        "commit_sha": "5ec9e956dc36316e889a3ebd1550c9cbc60b026b",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/5ec9e956dc36316e889a3ebd1550c9cbc60b026b",
+        "commit_at": "2026-09-22T17:04:46-05:00",
         "points_awarded": null,
-        "outstanding": [
-          "Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.",
-          "Trust: Every stored metric records the cost report ID, worksheet and line it was computed from."
-        ]
+        "outstanding": []
       }
     },
     {

@@ -10,6 +10,7 @@ import pytest
 from hcris_import import (
     HcrisFormatError,
     HospitalYear,
+    _dedupe_by_provider,
     dedupe_by_provider_year,
     extract_source_files,
     fiscal_year_of,
@@ -105,6 +106,26 @@ def test_a_zip_missing_the_expected_files_is_rejected_with_a_clear_error(tmp_pat
 
     with pytest.raises(HcrisFormatError, match="_rpt.csv"):
         extract_source_files(bad_zip, fiscal_year=2099)
+
+
+# -- _dedupe_by_provider: the hospitals table is keyed on provider_ccn
+# alone, so a batch containing the same hospital across two real fiscal
+# years (a real, already-verified scenario) must still collapse to one
+# row per hospital here, or a single-statement upsert crashes with a
+# Postgres "ON CONFLICT DO UPDATE command cannot affect row a second time"
+# error -- this is exactly the real bug that surfaced when importing FY2025.
+
+def test_same_hospital_across_two_fiscal_years_collapses_to_one_row():
+    rows = [make(fiscal_year=2024, rpt=1), make(fiscal_year=2025, rpt=2)]
+    result = _dedupe_by_provider(rows)
+    assert len(result) == 1
+    assert result[0].fiscal_year == 2025  # the more recent year wins
+
+
+def test_dedupe_by_provider_is_a_true_no_op_for_already_unique_providers():
+    rows = [make(ccn="370245", fiscal_year=2024, rpt=1), make(ccn="450001", fiscal_year=2024, rpt=2)]
+    result = _dedupe_by_provider(rows)
+    assert len(result) == 2
 
 
 def test_a_well_formed_zip_is_accepted(tmp_path):

@@ -31,8 +31,8 @@ then run `python3 scripts/build_plan.py` to refresh this file.
 
 - [x] Given the latest three years of CMS HCRIS files, When the importer runs, Then every rural and Critical Access Hospital in Oklahoma and Texas has a yearly row with operating margin, days cash on hand and days in A/R.
 - [x] Given the importer has already run, When it runs again on the same files, Then the database holds exactly the same rows with no duplicates.
-- [ ] Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.
-- [ ] Trust: Every stored metric records the cost report ID, worksheet and line it was computed from.
+- [x] Given a cost report missing a field a metric needs, When the importer runs, Then that metric is stored as missing with a reason, never as zero.
+- [x] Trust: Every stored metric records the cost report ID, worksheet and line it was computed from.
 
 ---
 

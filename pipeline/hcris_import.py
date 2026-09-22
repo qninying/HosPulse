@@ -23,10 +23,11 @@ Usage: python3 hcris_import.py --fiscal-year 2024
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlretrieve
@@ -70,6 +71,19 @@ NUMERIC_FIELDS = {
 }
 ALPHA_FIELDS = {
     "hospital_name": ("S200001", "00300", "00100"),               # Worksheet S-2 Part I, Line 3, Col 1: Hospital Name
+}
+
+# Maps each stored cost_report_years column to the NUMERIC_FIELDS key that
+# is its provenance source. accounts_receivable_net is derived from two
+# lines (accounts_receivable minus the allowance); the allowance being
+# absent is treated as a legitimate zero (not every hospital reports one),
+# so provenance for the net figure follows the primary line only.
+PROVENANCE_FIELDS = {
+    "cash_on_hand": "cash_on_hand",
+    "accounts_receivable_net": "accounts_receivable",
+    "net_patient_revenue": "net_patient_revenue",
+    "total_operating_expense": "total_operating_expense",
+    "net_income_from_patients": "net_income_from_patients",
 }
 
 
@@ -166,6 +180,7 @@ class HospitalYear:
     net_income_from_patients: float | None
     source_rpt_rec_num: int
     source_file: str
+    metric_provenance: dict = field(default_factory=dict)
 
 
 def extract_metrics(files: dict[str, Path], fiscal_year: int) -> list[HospitalYear]:
@@ -208,11 +223,17 @@ def extract_metrics(files: dict[str, Path], fiscal_year: int) -> list[HospitalYe
 
     def pivot(view_name: str, out_table: str, fields: dict[str, tuple[str, str, str]], numeric: bool):
         cast = "TRY_CAST(item_val AS DOUBLE)" if numeric else "item_val"
-        selects = ", ".join(
-            f"MAX(CASE WHEN wksht_cd='{w}' AND line_num='{l}' AND clmn_num='{c}' "
-            f"THEN {cast} END) AS {name}"
-            for name, (w, l, c) in fields.items()
-        )
+        parts = []
+        for name, (w, l, c) in fields.items():
+            when = f"wksht_cd='{w}' AND line_num='{l}' AND clmn_num='{c}'"
+            parts.append(f"MAX(CASE WHEN {when} THEN {cast} END) AS {name}")
+            if numeric:
+                # Distinguishes "line absent from this report" from "line
+                # present but failed to parse" -- both look like NULL in
+                # the value column above, but they're different situations
+                # (metric_provenance's status field needs to tell them apart).
+                parts.append(f"MAX(CASE WHEN {when} THEN 1 ELSE 0 END) AS {name}__found")
+        selects = ", ".join(parts)
         # CREATE TABLE AS forces immediate execution into a real DuckDB
         # table, not a lazy relation. A lazy relation built against a
         # registered Python-object view resolves that view's name at
@@ -229,22 +250,24 @@ def extract_metrics(files: dict[str, Path], fiscal_year: int) -> list[HospitalYe
     pivot("alpha_kv", "alpha_pivot", ALPHA_FIELDS, numeric=False)
 
     con.register("rpt_view", rpt)
+    found_cols = ", ".join(f"n.{name}__found" for name in NUMERIC_FIELDS)
     joined = con.sql(
-        """
+        f"""
         SELECT r.rpt_rec_num, r.prvdr_num, r.fy_bgn_dt, r.fy_end_dt,
                n.cash_on_hand, n.accounts_receivable, n.ar_allowance,
                n.net_patient_revenue, n.total_operating_expense,
                n.net_income_from_patients, n.rural_or_urban,
-               a.hospital_name
+               a.hospital_name, {found_cols}
         FROM rpt_view r
         JOIN numeric_pivot n USING (rpt_rec_num)
         LEFT JOIN alpha_pivot a USING (rpt_rec_num)
         """
     ).fetchall()
+    found_index = {name: 12 + i for i, name in enumerate(NUMERIC_FIELDS)}  # column order matches found_cols above
 
     results: list[HospitalYear] = []
     for row in joined:
-        (rec, ccn, fy_bgn, fy_end, cash, ar, ar_allow, npr, toe, nifp, rural, name) = row
+        rec, ccn, fy_bgn, fy_end, cash, ar, ar_allow, npr, toe, nifp, rural, name = row[:12]
         state = state_for_ccn(ccn)
         if state is None:
             continue  # not OK/TX, out of scope for this importer
@@ -254,6 +277,18 @@ def extract_metrics(files: dict[str, Path], fiscal_year: int) -> list[HospitalYe
         ar_net = None
         if ar is not None:
             ar_net = ar + (ar_allow or 0)  # allowance is stored as a negative value on Worksheet G
+
+        values = {
+            "cash_on_hand": cash, "accounts_receivable_net": ar,  # provenance status follows the raw line, not the derived net
+            "net_patient_revenue": npr, "total_operating_expense": toe, "net_income_from_patients": nifp,
+        }
+        provenance = {}
+        for db_column, source_key in PROVENANCE_FIELDS.items():
+            wksht, line, clmn = NUMERIC_FIELDS[source_key]
+            found = row[found_index[source_key]]
+            value = values[db_column]
+            status = "ok" if value is not None else ("not_reported" if not found else "unparseable")
+            provenance[db_column] = {"wksht_cd": wksht, "line_num": line, "clmn_num": clmn, "status": status}
 
         results.append(
             HospitalYear(
@@ -271,6 +306,7 @@ def extract_metrics(files: dict[str, Path], fiscal_year: int) -> list[HospitalYe
                 net_income_from_patients=nifp,
                 source_rpt_rec_num=rec,
                 source_file=f"HOSP10_{fiscal_year}",
+                metric_provenance=provenance,
             )
         )
     return dedupe_by_provider_year(results)
@@ -303,6 +339,21 @@ def load_env(path: Path) -> None:
             os.environ.setdefault(k, v)
 
 
+def _dedupe_by_provider(rows: list[HospitalYear]) -> list[HospitalYear]:
+    """The `hospitals` table is keyed on provider_ccn alone, unlike
+    `cost_report_years` (provider_ccn + fiscal_year), so a batch that
+    legitimately has one hospital across two real fiscal years still needs
+    exactly one row per hospital here. Prefers the highest fiscal_year,
+    tie-broken by the highest source_rpt_rec_num -- the most current
+    identity (name, rural status) available in this batch."""
+    best: dict[str, HospitalYear] = {}
+    for row in rows:
+        current = best.get(row.provider_ccn)
+        if current is None or (row.fiscal_year, row.source_rpt_rec_num) > (current.fiscal_year, current.source_rpt_rec_num):
+            best[row.provider_ccn] = row
+    return list(best.values())
+
+
 def upsert(rows: list[HospitalYear], database_url: str) -> None:
     """Idempotent load: ON CONFLICT DO UPDATE on the same natural keys
     used by the table's constraints, so importing the same file twice
@@ -323,7 +374,17 @@ def upsert(rows: list[HospitalYear], database_url: str) -> None:
                     rural_or_cah = EXCLUDED.rural_or_cah,
                     updated_at = now()
                 """,
-                [(r.provider_ccn, r.state, r.name, r.rural_or_cah) for r in rows],
+                # `rows` is deduped per (provider, fiscal_year), not per
+                # provider alone -- the same hospital legitimately appears
+                # twice in one batch when it has two real fiscal years in
+                # this file (the split-year pattern found earlier). A
+                # single INSERT...ON CONFLICT statement can't target the
+                # same conflict key twice, so dedupe again here, keyed on
+                # provider_ccn only, preferring the most recent fiscal year.
+                [
+                    (r.provider_ccn, r.state, r.name, r.rural_or_cah)
+                    for r in _dedupe_by_provider(rows)
+                ],
             )
             psycopg2.extras.execute_values(
                 cur,
@@ -332,7 +393,7 @@ def upsert(rows: list[HospitalYear], database_url: str) -> None:
                     provider_ccn, fiscal_year, fy_begin_date, fy_end_date,
                     cash_on_hand, accounts_receivable_net, net_patient_revenue,
                     total_operating_expense, net_income_from_patients,
-                    source_rpt_rec_num, source_file
+                    source_rpt_rec_num, source_file, metric_provenance
                 ) VALUES %s
                 ON CONFLICT (provider_ccn, fiscal_year) DO UPDATE SET
                     fy_begin_date = EXCLUDED.fy_begin_date,
@@ -344,6 +405,7 @@ def upsert(rows: list[HospitalYear], database_url: str) -> None:
                     net_income_from_patients = EXCLUDED.net_income_from_patients,
                     source_rpt_rec_num = EXCLUDED.source_rpt_rec_num,
                     source_file = EXCLUDED.source_file,
+                    metric_provenance = EXCLUDED.metric_provenance,
                     imported_at = now()
                 -- Order-independent across separate runs, not just within
                 -- one: dedupe_by_provider_year() only protects duplicates
@@ -361,6 +423,7 @@ def upsert(rows: list[HospitalYear], database_url: str) -> None:
                         r.cash_on_hand, r.accounts_receivable_net, r.net_patient_revenue,
                         r.total_operating_expense, r.net_income_from_patients,
                         r.source_rpt_rec_num, r.source_file,
+                        psycopg2.extras.Json(r.metric_provenance),
                     )
                     for r in rows
                 ],

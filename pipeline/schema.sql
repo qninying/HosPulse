@@ -51,15 +51,25 @@ CREATE TABLE IF NOT EXISTS cost_report_years (
     ) STORED,
 
     -- Traceability (REQ-013 / STORY-001's Trust criterion): the exact
-    -- source report and file this row was computed from. The specific
-    -- WKSHT_CD/LINE_NUM/CLMN_NUM per field is fixed and documented in
-    -- pipeline/hcris_import.py's METRICS dict, not duplicated per row.
+    -- source report this row was computed from.
     source_rpt_rec_num       bigint NOT NULL,
     source_file              text NOT NULL,            -- e.g. "HOSP10_2024"
     imported_at              timestamptz NOT NULL DEFAULT now(),
 
+    -- Per-metric provenance: for each of the 5 raw metrics above, the
+    -- exact {wksht_cd, line_num, clmn_num} it was read from and a status
+    -- of "ok" | "not_reported" (the line wasn't in this report) |
+    -- "unparseable" (present but not a valid number). Makes every row
+    -- self-describing without needing to trust code elsewhere hasn't
+    -- drifted, and turns a bare NULL into a specific, checkable reason.
+    metric_provenance        jsonb NOT NULL DEFAULT '{}'::jsonb,
+
     UNIQUE (provider_ccn, fiscal_year)
 );
+
+-- Migration for a table that may already exist from before this column
+-- was added (idempotent: a no-op if it's already there).
+ALTER TABLE cost_report_years ADD COLUMN IF NOT EXISTS metric_provenance jsonb NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE INDEX IF NOT EXISTS idx_cost_report_years_provider ON cost_report_years(provider_ccn);
 
