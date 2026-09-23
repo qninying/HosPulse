@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 11,
+    "stories_verified": 12,
     "stories_submitted": 1,
-    "stories_in_progress": 2,
+    "stories_in_progress": 1,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 37,
-    "points_awarded": 2609
+    "criteria_passed": 40,
+    "points_awarded": 2666
   },
   "stories": [
     {
@@ -397,19 +397,15 @@
       "notes": "This is `.hospulse` STORY-010's own build ('Email the weekly hospitals-at-risk briefing on a schedule', more complete than this story's 3 criteria: GitHub Actions cron + a real Central-time gate, idempotency keyed on (company, week), per-company failure isolation) satisfying this story's 3 criteria as a side effect -- ninth instance of the `.colaberry`/`.hospulse` numbering-and-scope gap this repo has documented. Unlike STORY-013's crediting-only case, this required real new work: no Resend account, no operator email column anywhere in the schema, and no Vercel deployment existed before this session. Resolved with the user's explicit sign-off before writing code: added a real email column to company_members, seeded one real company + operator (the user's own email, since no customer has signed up yet), chose GitHub Actions cron over the Vercel Cron this story's own guidance suggested (no Vercel project exists), and obtained a real Resend API key. Found and fixed mid-build: the existing STORY-003/STORY-007 briefing agent generated one shared briefing for all 253 nationally-flagged hospitals, which failed outright on a real live run (Claude could not name all 253 in one response) and was architecturally wrong regardless (a company should only see hospitals it manages, per STORY-006's RLS boundary) -- fixed by scoping briefings per company via company_hospitals, adding company_id to the briefings table. Live-verified for real, twice: a real Claude Sonnet 5 call generated a real grounded 2,559-character briefing for a company with 3 real assigned hospitals, a real email was sent via Resend with a real provider_message_id, and re-running the job immediately afterward sent 0 new emails and left exactly 1 row in weekly_briefing_emails, proving the idempotency guarantee live rather than only in a mocked test.",
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 129,
-        "outstanding": [
-          "Given a briefing is ready, When the email job runs, Then the briefing is emailed at 6:00 AM Central.",
-          "Given an email delivery failure, When the email job runs, Then a retry is attempted.",
-          "Trust: Each email sent is logged with a timestamp and recipient."
-        ]
+        "verified_at": "2026-09-23T22:59:47.518Z",
+        "commit_sha": "6d4f5221fe36856ea29d355dda3ac588f2699609",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/6d4f5221fe36856ea29d355dda3ac588f2699609",
+        "commit_at": "2026-09-23T22:59:17Z",
+        "points_awarded": 186,
+        "outstanding": []
       }
     },
     {
