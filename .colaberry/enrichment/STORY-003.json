@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-003",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T20:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "data",
+      "value": "A public hospital can genuinely have fewer than three fiscal years of cost report data even after the 3-year HCRIS import (e.g. ANSON GENERAL HOSPITAL, CCN 670781, has only FY2024 and FY2025 on record, not FY2023).",
+      "evidence": "frontend/src/lib/hospitalDetail.test.ts"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "The public frontend reads hospital data through @supabase/supabase-js (anon/publishable key, PostgREST) rather than a direct Postgres connection, even though a working DATABASE_URL connection string already existed locally.",
+      "rationale": "Vercel serverless functions are ephemeral and scale out horizontally; a direct Postgres connection per invocation exhausts Supabase's direct-connection limit under real traffic. Supabase's own pooler/REST layer exists specifically so serverless clients avoid this. This also matches the story's own task guidance to use Supabase, not just any Postgres connection.",
+      "evidence": "frontend/src/lib/supabaseClient.ts"
+    },
+    {
+      "statement": "Hospital name search is case-insensitive partial matching (ilike), not an exact-name match.",
+      "rationale": "Public users searching by memory will not know a hospital's exact CMS-registered name string; requiring an exact match would make the free public search practically unusable.",
+      "evidence": "frontend/src/lib/hospitalSearch.ts"
+    },
+    {
+      "statement": "The acceptance criterion 'notes public data lag' is implemented as a static disclosure sentence about CMS's filing-and-processing delay, not a computed per-hospital lag figure.",
+      "rationale": "There is no per-row lag timestamp in the source data to compute an actual lag from; inventing one would be an ungrounded number, which the project's own grounding guardrail (REQ-004) exists to prevent.",
+      "evidence": "frontend/src/lib/hospitalDetail.ts"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The public trend view shows only the three financial metrics from STORY-002 (operating margin, days cash on hand, days in AR) and collapses any missing value to a plain 'not available' -- it does not surface the per-metric provenance/not_reported reasons that STORY-001/002 already store in the database.",
+      "evidence": "frontend/src/lib/hospitalDetail.ts#formatMetric"
+    },
+    {
+      "statement": "There is no exact-name-to-single-hospital shortcut: a name search always returns a results list (even a list of one), and the three-year trend view is only reached from that list or by direct provider_ccn URL.",
+      "evidence": "frontend/src/app/page.tsx"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "frontend/src/lib/hospitalSearch.test.ts"
+    },
+    {
+      "kind": "test",
+      "ref": "frontend/src/lib/hospitalDetail.test.ts"
+    }
+  ],
+  "measurementEvents": []
+}
