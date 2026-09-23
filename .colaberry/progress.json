@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 12,
+    "stories_verified": 13,
     "stories_submitted": 1,
-    "stories_in_progress": 1,
+    "stories_in_progress": 0,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 40,
-    "points_awarded": 2666
+    "criteria_passed": 43,
+    "points_awarded": 2723
   },
   "stories": [
     {
@@ -442,19 +442,15 @@
       "notes": "Audited every REQ-015-named process (import, upload, normalization, email) before writing anything: all four were already idempotent by construction (ON CONFLICT upserts on natural keys in hcris_import.py/early_warning.py; a SHA-256 file-hash UNIQUE key in export_conversions for upload+normalization; a (company_id, week_of, recipient_email) UNIQUE key in weekly_briefing_emails for email) and three of the four already had a live double-run proof recorded in PROGRESS.md from their own stories. Two real, specific gaps survived that audit rather than everything being crediting-only: (1) no test anywhere exercised the interruption half of the acceptance criteria -- every existing proof was 'run twice from a clean start', never 'crash mid-run, then resume'. hcris_import.py's download_hcris_zip() already had the right shape (writes to a .part file, renames only on success) but it was undemonstrated; added 4 tests (offline, urlretrieve monkeypatched -- no real network) covering skip-if-already-downloaded, a stale .part left by a simulated crash not being mistaken for a completed download, and the existing retry/backoff path, which had zero test coverage before this story despite already being written. (2) export_conversions and weekly_briefing_emails already are execution-state logs in the sense the Trust criterion asks for (one row per unit of work, written on every outcome) -- hcris_import.py and early_warning.py had no equivalent, only their final upserted data tables, so a resumed run had nothing to point at as 'here is what the last run did'. Added a small shared pipeline/pipeline_run_log.py (start_pipeline_run/finish_pipeline_run) and wrapped both processes' run() in it -- not a new idempotency key (the natural-key upserts already made both safe to run twice before this table existed), purely the audit trail. Did not route export_normalizer.py or weekly_briefing_email.py through the same table: they already have a finer-grained log of their own (per-file, per-send) and duplicating that into a second table would be redundant, not stronger. Live-verified, not just unit-tested: applied the schema.sql migration to production Supabase, then ran early_warning.py twice back to back (274/274 hospitals, identical distribution both times, pipeline_runs shows 2 succeeded rows) and hcris_import.py --fiscal-year 2025 twice back to back (137/137 rows both times, pipeline_runs shows 2 succeeded rows, no growth in cost_report_years from the repeat run). Full pipeline/ suite: 124 passed, 1 skipped, zero regressions.",
       "updated_at": "2026-09-23T23:30:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 129,
-        "outstanding": [
-          "Given a process runs twice, When executed, Then the outcome remains unchanged.",
-          "Given a process interruption, When resumed, Then the process completes without duplication.",
-          "Trust: Each process logs its execution state to prevent duplication."
-        ]
+        "verified_at": "2026-09-23T23:19:04.329Z",
+        "commit_sha": "b1390b59e6a13cff324e4f8bd9f5a5d8ba86daa6",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/b1390b59e6a13cff324e4f8bd9f5a5d8ba86daa6",
+        "commit_at": "2026-09-23T23:18:31Z",
+        "points_awarded": 186,
+        "outstanding": []
       }
     },
     {
