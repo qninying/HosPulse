@@ -107,6 +107,32 @@ ALTER TABLE early_warning_flags ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public read" ON early_warning_flags;
 CREATE POLICY "public read" ON early_warning_flags FOR SELECT USING (true);
 
+-- STORY-003: grounded hospitals-at-risk briefings written by Claude Sonnet
+-- 5 from early_warning_flags' own output (REQ-006). One row per
+-- generation run; UNIQUE(as_of_date) makes re-running the same day
+-- idempotent (replaces that day's briefing) instead of accumulating
+-- duplicates. facts and provider_ccns are stored alongside body so a
+-- saved briefing's grounding can be re-verified later without re-calling
+-- Claude. Derived entirely from public CMS-sourced flags, same public-read
+-- treatment as early_warning_flags above.
+CREATE TABLE IF NOT EXISTS briefings (
+    id             bigserial PRIMARY KEY,
+    as_of_date     date NOT NULL,
+    provider_ccns  jsonb NOT NULL,   -- flagged hospitals this briefing covers
+    facts          jsonb NOT NULL,   -- exact engine values Claude was given (REQ-004 audit trail)
+    body           text NOT NULL,
+    model          text NOT NULL,
+    generated_at   timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (as_of_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_briefings_as_of_date ON briefings(as_of_date);
+
+ALTER TABLE briefings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "public read" ON briefings;
+CREATE POLICY "public read" ON briefings FOR SELECT USING (true);
+
 -- STORY-011: normalize operator-uploaded hospital-system exports (Epic,
 -- Cerner, etc.) into standard monthly metrics. Unlike the public CMS
 -- tables above, this is a management company's own data -- no upload

@@ -4,11 +4,11 @@
   "totals": {
     "stories_total": 13,
     "stories_verified": 1,
-    "stories_submitted": 0,
+    "stories_submitted": 1,
     "stories_in_progress": 0,
-    "stories_not_started": 12,
+    "stories_not_started": 11,
     "criteria_total": 49,
-    "criteria_passed": 4,
+    "criteria_passed": 8,
     "points_awarded": 0
   },
   "stories": [
@@ -41,8 +41,8 @@
         "criteria_passed": 0,
         "criteria_total": 0,
         "verified_at": null,
-        "commit_sha": "d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
-        "commit_url": "https://github.com/qninying/HosPulse/commit/d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
+        "commit_sha": "cbac954e43ccfc7244b40407877349d94d119d88",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/cbac954e43ccfc7244b40407877349d94d119d88",
         "commit_at": "2026-09-22T15:49:43-05:00",
         "points_awarded": null,
         "outstanding": []
@@ -85,10 +85,10 @@
         "state": "verified",
         "criteria_passed": 4,
         "criteria_total": 4,
-        "verified_at": "2026-09-22T17:04:46-05:00",
-        "commit_sha": "5ec9e956dc36316e889a3ebd1550c9cbc60b026b",
-        "commit_url": "https://github.com/qninying/HosPulse/commit/5ec9e956dc36316e889a3ebd1550c9cbc60b026b",
-        "commit_at": "2026-09-22T17:04:46-05:00",
+        "verified_at": "2026-09-22T17:10:42-05:00",
+        "commit_sha": "915ca185fc7c040c07f2d325437878df7f7fbccd",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/915ca185fc7c040c07f2d325437878df7f7fbccd",
+        "commit_at": "2026-09-22T17:10:42-05:00",
         "points_awarded": null,
         "outstanding": []
       }
@@ -124,9 +124,9 @@
         "criteria_passed": 0,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "919c2c08a6acb8449ca1247d6b2be904adbd7a7b",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/919c2c08a6acb8449ca1247d6b2be904adbd7a7b",
+        "commit_at": "2026-09-22T18:44:47-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given a hospital with operating margin below 0%, days cash on hand below 30, or days in A/R rising two years in a row, When the engine runs, Then that hospital receives a flag naming the rule it tripped.",
@@ -143,40 +143,42 @@
       "criteria": [
         {
           "text": "Given a list of hospitals, When the briefing script runs, Then Claude Sonnet 5 produces a one-page briefing covering every flagged hospital in the list.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a briefing that contains a number not present in the engine's output, When the grounding check runs, Then the briefing is rejected and not saved.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given the Claude API times out or errors, When the script runs, Then it retries a capped number of times and then fails with a clear message, saving nothing partial.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Every number in a saved briefing matches a stored metric or flag value.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
+      "files_touched": [
+        "pipeline/briefing_agent.py",
+        "pipeline/test_briefing_agent.py",
+        "pipeline/schema.sql",
+        "requirements.txt"
+      ],
+      "tests_added": [
+        "pipeline/test_briefing_agent.py (10 tests)"
+      ],
+      "notes": "Live-verified against real Supabase + real Claude Sonnet 5 API, not just mocks: generate_grounded_briefing() run against 3 real flagged hospitals (Hillcrest Medical Center, INTEGRIS Woodward, INTEGRIS Miami), grounding check passed genuinely on the model's real output, saved to the new briefings table (as_of_date=2026-09-23). Coverage/grounding/retry failure paths covered by 10 mocked tests (no live API cost) using a fake Claude client; full pipeline suite 103 passed, 1 skipped, no regressions. Known scope gap surfaced, not fixed: fetch_flagged_hospitals() pulls ALL globally-flagged hospitals (257 real rows in production) with no per-company or count limit -- acceptable for STORY-003 alone since no company scoping exists until STORY-006/009, but run() as written would try to brief all 257 in one call if invoked as-is; the live test above used a manually-sliced subset of 3 instead of calling run() directly.",
       "updated_at": null,
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "submitted",
+        "criteria_passed": 4,
         "criteria_total": 4,
         "verified_at": null,
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
         "points_awarded": null,
-        "outstanding": [
-          "Given a list of hospitals, When the briefing script runs, Then Claude Sonnet 5 produces a one-page briefing covering every flagged hospital in the list.",
-          "Given a briefing that contains a number not present in the engine's output, When the grounding check runs, Then the briefing is rejected and not saved.",
-          "Given the Claude API times out or errors, When the script runs, Then it retries a capped number of times and then fails with a clear message, saving nothing partial.",
-          "Trust: Every number in a saved briefing matches a stored metric or flag value."
-        ]
+        "outstanding": []
       }
     },
     {
@@ -253,9 +255,9 @@
         "criteria_passed": 0,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "a158a4b0db16dd05dd10e80d8b6aaec2e271e9e0",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/a158a4b0db16dd05dd10e80d8b6aaec2e271e9e0",
+        "commit_at": "2026-09-22T21:51:08-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given five hospitals with published audited financials, When their snapshot metrics are compared, Then each metric is within 2 percentage points or 5 days of the published figure, or the difference is explained in writing.",
@@ -296,9 +298,9 @@
         "criteria_passed": 0,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "e4084d6aa38fbbc18aa6246930de1ed18426b5fb",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/e4084d6aa38fbbc18aa6246930de1ed18426b5fb",
+        "commit_at": "2026-09-22T22:20:36-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given an operator from company A, When they sign in, Then they see only company A's hospitals.",
@@ -468,9 +470,9 @@
         "criteria_passed": 0,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "ff9ab09a11a1ac1a960258905744217ac4460fd4",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/ff9ab09a11a1ac1a960258905744217ac4460fd4",
+        "commit_at": "2026-09-22T19:21:31-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.",
@@ -515,9 +517,9 @@
         "criteria_passed": 0,
         "criteria_total": 5,
         "verified_at": null,
-        "commit_sha": "d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
-        "commit_url": "https://github.com/qninying/HosPulse/commit/d7c0f6e89d3f8089447657e077b43cbbf5588d2e",
-        "commit_at": "2026-09-22T15:49:43-05:00",
+        "commit_sha": "f6a4f4125434a37951b6841be811dd90dc77de98",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/f6a4f4125434a37951b6841be811dd90dc77de98",
+        "commit_at": "2026-09-22T21:02:18-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",
@@ -559,9 +561,9 @@
         "criteria_passed": 0,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "3dd8dc23422cd9c68e7d271e0fb0436acc40431e",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/3dd8dc23422cd9c68e7d271e0fb0436acc40431e",
+        "commit_at": "2026-09-22T21:20:59-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.",

@@ -28,10 +28,10 @@ Pass only engine output (metrics and flags) as structured input, extract every n
 Ticks mirror `.hospulse/progress.json`, which is the source of truth. Set `passed` there,
 then run `python3 scripts/build_plan.py` to refresh this file.
 
-- [ ] Given a list of hospitals, When the briefing script runs, Then Claude Sonnet 5 produces a one-page briefing covering every flagged hospital in the list.
-- [ ] Given a briefing that contains a number not present in the engine's output, When the grounding check runs, Then the briefing is rejected and not saved.
-- [ ] Given the Claude API times out or errors, When the script runs, Then it retries a capped number of times and then fails with a clear message, saving nothing partial.
-- [ ] Trust: Every number in a saved briefing matches a stored metric or flag value.
+- [x] Given a list of hospitals, When the briefing script runs, Then Claude Sonnet 5 produces a one-page briefing covering every flagged hospital in the list.
+- [x] Given a briefing that contains a number not present in the engine's output, When the grounding check runs, Then the briefing is rejected and not saved.
+- [x] Given the Claude API times out or errors, When the script runs, Then it retries a capped number of times and then fails with a clear message, saving nothing partial.
+- [x] Trust: Every number in a saved briefing matches a stored metric or flag value.
 
 ---
 
