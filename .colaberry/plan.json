@@ -693,7 +693,34 @@
       "due_baseline_on": "2026-09-28"
     }
   ],
-  "agents": [],
+  "agents": [
+    {
+      "id": "AGENT-001",
+      "name": "Briefing Agent",
+      "purpose": "Turns a company's currently-flagged hospitals (early_warning_flags, scoped through company_hospitals) into a grounded, human-readable weekly briefing. Every number Claude states must already exist in the engine's own output, or the briefing is rejected before it is ever saved.",
+      "trigger_type": "scheduled",
+      "trigger": "Weekly, Monday 6:00 AM Central, via the GitHub Actions cron in .github/workflows/weekly-briefing-email.yml (pipeline/weekly_briefing_email.py calls pipeline/briefing_agent.py once per company); can also be run on demand with --force.",
+      "inputs": [
+        "early_warning_flags.criteria for the hospitals one company manages (joined through company_hospitals)",
+        "The exact numeric facts flattened from those criteria (briefing_agent.build_facts())"
+      ],
+      "outputs": [
+        "One briefings row per company per day (Postgres)",
+        "One weekly email per operator, sent via Resend, logged in weekly_briefing_emails"
+      ],
+      "autonomy_level": "autonomous",
+      "approval_gates": [
+        "validate_flagged_hospital(): malformed or empty engine output is rejected before Claude is ever called (InvalidEngineOutput)",
+        "check_coverage() / grounding check: any hospital not named, or any number not present in the engine's own facts, rejects the whole briefing before it is saved (UngroundedBriefing / IncompleteBriefing)"
+      ],
+      "escalation_rules": [
+        "A rejected or failed briefing for one company is skipped and logged; it never blocks or corrupts another company's briefing in the same run",
+        "Claude API failures retry with capped exponential backoff, then fail loudly (ClaudeCallFailed) rather than sending an unverified briefing"
+      ],
+      "skills": [],
+      "owns": ["STORY-007", "STORY-008"]
+    }
+  ],
   "project": {
     "name": "HosPulse",
     "descriptor": "Early-warning intelligence system for rural and Critical Access Hospital management companies.",
@@ -767,9 +794,11 @@
       },
       "stories_total": 13,
       "releases_total": 5,
-      "agents_total": 0,
+      "agents_total": 1,
       "failure_paths_total": 41,
-      "agents_by_autonomy": {}
+      "agents_by_autonomy": {
+        "autonomous": 1
+      }
     }
   }
 }
