@@ -40,8 +40,15 @@
   (function () {
     const { esc, getParam, statusDot, sampleBadge, verificationForRequirement } = CommandCenter;
 
-    // Sample overlay only. The real computation stays honest.
-    const SAMPLE_STATES = { "REQ-003": "partial", "REQ-004": "enforced", "REQ-008": "not_enforced", "REQ-009": "not_enforced", "REQ-014": "not_enforced" };
+    // Sample overlay only. The real computation stays honest. Keyed on the
+    // plan's actual SAFE requirement ids (REQ-006/008/009/012/013/015) --
+    // keep this in sync whenever plan.derived.guardrails changes, or an
+    // id with no override here silently falls back to the real computed
+    // state instead of a believable sample one.
+    const SAMPLE_STATES = {
+      "REQ-006": "enforced", "REQ-008": "enforced", "REQ-009": "enforced",
+      "REQ-012": "not_enforced", "REQ-013": "partial", "REQ-015": "not_enforced",
+    };
 
     function label(state) {
       if (state === "enforced") return "Enforced";

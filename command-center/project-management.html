@@ -50,9 +50,16 @@
     const { esc, getParam, statusDot, sampleBadge, storyState } = CommandCenter;
 
     // Sample overlay only, consistent with the Overview's sample headline.
+    // Keep this covering every story id in the plan -- an id with no entry
+    // here falls back to "not_started" (safe), but a real story added
+    // later should still get a deliberate, believable sample state rather
+    // than an accidental one.
     const SAMPLE_STATES = {
       "STORY-000": "verified", "STORY-001": "verified", "STORY-002": "verified", "STORY-003": "verified",
-      "STORY-004": "in_progress",
+      "STORY-004": "in_progress", "STORY-005": "in_progress", "STORY-006": "not_started",
+      "STORY-007": "not_started", "STORY-008": "not_started", "STORY-009": "not_started",
+      "STORY-010": "verified", "STORY-011": "not_started", "STORY-012": "not_started",
+      "STORY-013": "not_started",
     };
 
     function displayState(progress, id, mode) {
