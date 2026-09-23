@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 9,
+    "stories_verified": 10,
     "stories_submitted": 1,
-    "stories_in_progress": 4,
+    "stories_in_progress": 3,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 31,
-    "points_awarded": 2495
+    "criteria_passed": 34,
+    "points_awarded": 2552
   },
   "stories": [
     {
@@ -589,19 +589,15 @@
       "notes": "REQ-012 was already fully satisfied as a side effect of STORY-011 (Convert Hospital System Exports to Standard Metrics), never previously credited to STORY-013's own id -- the seventh instance of the .colaberry/.hospulse-adjacent story-crediting gap this repo has documented. mappings.detect_format() returns None for an unrecognized column layout; normalize_rows() then sets status='needs_mapping' and never guesses a mapping (criterion 1, tested). A recognized format sets status='ok' with no marking (criterion 2). persist_conversion() writes one export_conversions audit row for every outcome -- ok, needs_mapping, or failed -- unconditionally, before any metrics table is touched, so an audit entry can never be skipped by construction (criterion 3). All three were also live-verified against real production Supabase during STORY-011's own session (see PROGRESS.md's STORY-011 entry: 'an unmapped format returned needs_mapping' with zero rows written to hospital_monthly_metrics). No new code was written for this story since none was needed; verified by re-reading the existing implementation and tests against STORY-013's literal acceptance criteria before ticking anything.",
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given an uploaded file with an unknown format, When the system processes the file, Then the file is marked as 'needs mapping'.",
-          "Given an uploaded file with a known format, When the system processes the file, Then the file is processed normally without marking.",
-          "Trust: Given any file processing, Then the system logs the format status and decision in the audit trail."
-        ]
+        "verified_at": "2026-09-23T19:36:55.938Z",
+        "commit_sha": "c22a23c9dfab10a8e506e85c85059b0c4d1648f5",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/c22a23c9dfab10a8e506e85c85059b0c4d1648f5",
+        "commit_at": "2026-09-23T19:36:37Z",
+        "points_awarded": 57,
+        "outstanding": []
       }
     }
   ]
