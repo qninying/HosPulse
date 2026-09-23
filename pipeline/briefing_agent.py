@@ -1,10 +1,20 @@
-"""STORY-003 / STORY-007: write a grounded hospitals-at-risk briefing.
+"""STORY-003 / STORY-007: write a grounded hospitals-at-risk briefing,
+scoped to one management company at a time.
 
 REQ-006: produce a one-page plain-English briefing covering every hospital
 the early-warning engine (STORY-002) flagged, and reject any AI-written
 briefing that states a number not present in the engine's own output --
 enforced by grounding_guardrail.py, the one shared check both this agent and
 the future cost report co-pilot use.
+
+Company-scoped since STORY-008 / STORY-010 (weekly_briefing_email.py):
+the original build predated company_hospitals (STORY-006) and generated
+one shared "every flagged hospital nationally" briefing -- that broke the
+moment a real per-company weekly email had to go out (253 flagged
+hospitals do not fit in one Claude response, and a company should only
+ever be briefed on hospitals it actually manages, same boundary already
+enforced by RLS for reads). generate_and_save_company_briefing() is the
+real entry point now; weekly_briefing_email.py calls it once per company.
 
 Four ways this can legitimately fail, all handled explicitly, none
 surfacing as an unhandled exception or a silent no-op:
@@ -25,26 +35,22 @@ surfacing as an unhandled exception or a silent no-op:
 save_briefing() is the only write, called once, only after every check
 passes -- there is no path that persists a partial result.
 
-Usage: python3 briefing_agent.py
+No standalone usage: this module is called by weekly_briefing_email.py,
+once per company.
 """
 
 from __future__ import annotations
 
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import date, UTC, datetime
-from pathlib import Path
 from typing import Callable
 
 import anthropic
 import psycopg2
 import psycopg2.extras
 
-from env import load_env
 from grounding_guardrail import validate_ai_output_is_grounded
-
-ROOT = Path(__file__).resolve().parent.parent
 
 MODEL = "claude-sonnet-5"
 MAX_ATTEMPTS = 4  # first attempt + at most 3 retries, per STORY-003
@@ -94,6 +100,7 @@ class FlaggedHospital:
 
 @dataclass
 class BriefingResult:
+    company_id: str
     as_of_date: date
     provider_ccns: list[str]
     facts: dict[str, float]
@@ -217,7 +224,9 @@ def call_claude_with_retry(
     ) from last_error
 
 
-def fetch_flagged_hospitals(database_url: str) -> list[FlaggedHospital]:
+def fetch_flagged_hospitals_for_company(database_url: str, company_id: str) -> list[FlaggedHospital]:
+    """Only hospitals this company actually manages (company_hospitals,
+    STORY-006) -- never every flagged hospital nationally."""
     conn = psycopg2.connect(database_url, connect_timeout=10)
     try:
         with conn.cursor() as cur:
@@ -226,9 +235,11 @@ def fetch_flagged_hospitals(database_url: str) -> list[FlaggedHospital]:
                 SELECT ewf.provider_ccn, h.name, ewf.as_of_fiscal_year, ewf.criteria
                 FROM early_warning_flags ewf
                 JOIN hospitals h ON h.provider_ccn = ewf.provider_ccn
-                WHERE ewf.status = 'flagged'
+                JOIN company_hospitals ch ON ch.provider_ccn = ewf.provider_ccn
+                WHERE ewf.status = 'flagged' AND ch.company_id = %s
                 ORDER BY ewf.provider_ccn
-                """
+                """,
+                (company_id,),
             )
             rows = cur.fetchall()
     finally:
@@ -240,17 +251,17 @@ def fetch_flagged_hospitals(database_url: str) -> list[FlaggedHospital]:
 
 
 def save_briefing(result: BriefingResult, database_url: str) -> None:
-    """Idempotent: ON CONFLICT (as_of_date) DO UPDATE, so re-running on the
-    same day replaces that day's briefing instead of accumulating
-    duplicates."""
+    """Idempotent: ON CONFLICT (company_id, as_of_date) DO UPDATE, so
+    re-running on the same day for the same company replaces that day's
+    briefing instead of accumulating duplicates."""
     conn = psycopg2.connect(database_url, connect_timeout=10)
     try:
         with conn, conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO briefings (as_of_date, provider_ccns, facts, body, model)
-                VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (as_of_date) DO UPDATE SET
+                INSERT INTO briefings (company_id, as_of_date, provider_ccns, facts, body, model)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (company_id, as_of_date) DO UPDATE SET
                     provider_ccns = EXCLUDED.provider_ccns,
                     facts = EXCLUDED.facts,
                     body = EXCLUDED.body,
@@ -258,6 +269,7 @@ def save_briefing(result: BriefingResult, database_url: str) -> None:
                     generated_at = now()
                 """,
                 (
+                    result.company_id,
                     result.as_of_date,
                     psycopg2.extras.Json(result.provider_ccns),
                     psycopg2.extras.Json(result.facts),
@@ -272,6 +284,7 @@ def save_briefing(result: BriefingResult, database_url: str) -> None:
 def generate_grounded_briefing(
     client: anthropic.Anthropic,
     flagged: list[FlaggedHospital],
+    company_id: str,
     as_of_date: date | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> BriefingResult:
@@ -299,6 +312,7 @@ def generate_grounded_briefing(
         raise UngroundedBriefing(grounding.reason())
 
     return BriefingResult(
+        company_id=company_id,
         as_of_date=as_of_date,
         provider_ccns=[h.provider_ccn for h in flagged],
         facts=facts,
@@ -306,26 +320,19 @@ def generate_grounded_briefing(
     )
 
 
-def run() -> BriefingResult | None:
-    load_env(ROOT / ".env")
-    database_url = os.environ.get("DATABASE_URL")
-    if not database_url:
-        raise RuntimeError("DATABASE_URL not set -- check .env")
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY not set -- check .env")
-
-    flagged = fetch_flagged_hospitals(database_url)
+def generate_and_save_company_briefing(
+    client: anthropic.Anthropic,
+    database_url: str,
+    company_id: str,
+    as_of_date: date | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+) -> BriefingResult | None:
+    """The real entry point, called once per company by
+    weekly_briefing_email.py. Returns None if this company has no flagged
+    hospitals right now -- nothing to brief, not an error."""
+    flagged = fetch_flagged_hospitals_for_company(database_url, company_id)
     if not flagged:
-        print("No flagged hospitals -- nothing to brief.")
         return None
-
-    client = anthropic.Anthropic(api_key=api_key)
-    result = generate_grounded_briefing(client, flagged)
+    result = generate_grounded_briefing(client, flagged, company_id, as_of_date=as_of_date, sleep=sleep)
     save_briefing(result, database_url)
-    print(f"Saved briefing for {result.as_of_date} covering {len(result.provider_ccns)} hospital(s).")
     return result
-
-
-if __name__ == "__main__":
-    run()

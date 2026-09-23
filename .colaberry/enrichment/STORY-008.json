@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-008",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T23:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "systems",
+      "value": "Weekly email delivery runs on GitHub Actions cron (two schedule entries, 11:00 and 12:00 UTC, to cover both sides of the Central-time DST transition), not Vercel Cron -- no Vercel project has been deployed yet, so GitHub Actions is the only cron target that exists today.",
+      "evidence": ".github/workflows/weekly-briefing-email.yml"
+    },
+    {
+      "dimension": "systems",
+      "value": "Email delivery goes through Resend, sent from the sandbox address onboarding@resend.dev, which can only deliver to the email address the Resend account itself is registered under until a real domain is verified.",
+      "evidence": "pipeline/weekly_briefing_email.py (FROM_ADDRESS, send_email_with_retry)"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "Briefings are generated per company, not globally: briefing_agent.fetch_flagged_hospitals_for_company() joins early_warning_flags to company_hospitals, so a company is only ever briefed on hospitals it actually manages. The prior global design (all nationally-flagged hospitals in one briefing) failed a real live run because Claude could not name all 253 flagged hospitals in a single response.",
+      "evidence": "pipeline/briefing_agent.py (fetch_flagged_hospitals_for_company, generate_and_save_company_briefing)"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "Idempotency for weekly email sends is enforced by reserving a (company_id, week_of, recipient_email) row via INSERT ... ON CONFLICT DO NOTHING before Resend is ever called, not by checking-then-sending. A run triggered twice in the same week sends at most once per operator, verified live by re-running the real job immediately after a successful send.",
+      "evidence": "pipeline/weekly_briefing_email.py (reserve_send_slot); production weekly_briefing_emails table showed exactly 1 row after two consecutive real runs"
+    },
+    {
+      "dimension": "constraints",
+      "value": "No sign-up/auth flow exists yet, so there was nowhere in the schema to look up an operator's real email address. company_members previously stored only a bare user_id with no email column at all.",
+      "evidence": "pipeline/schema.sql (company_members.email column added this story)"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Chose GitHub Actions cron over Vercel Cron, despite this story's own task guidance suggesting Vercel.",
+      "rationale": "The frontend has never been deployed to Vercel, so there is no Vercel project to attach a scheduled function to. GitHub Actions runs against the repo directly with zero new infrastructure, and is what `.hospulse`'s own more detailed version of this story (STORY-010) already specified.",
+      "evidence": ".github/workflows/weekly-briefing-email.yml"
+    },
+    {
+      "statement": "Scoped briefings per company rather than raising max_tokens to fit all 253 nationally-flagged hospitals into one oversized global briefing.",
+      "rationale": "A single global briefing is not the correct end state for a multi-tenant product regardless of token limits -- a company should only ever see hospitals it manages, the same boundary STORY-006's row-level security already enforces for reads. The token-limit failure surfaced the design gap; fixing the design was the real fix, not a bigger prompt.",
+      "evidence": "pipeline/briefing_agent.py; pipeline/schema.sql (briefings.company_id)"
+    },
+    {
+      "statement": "Seeded one real company and one real operator using the user's own email, rather than fabricating a placeholder company or waiting for a real customer sign-up.",
+      "rationale": "The user explicitly wanted nothing fake in this build. A real email that genuinely receives a genuine message is real verification; a placeholder address would not prove the delivery pipeline actually works.",
+      "evidence": "production companies/company_members rows; a real Resend provider_message_id recorded against the seeded operator's real email"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Resend's sandbox sender (onboarding@resend.dev) can only deliver to the account's own registered email until a real domain is verified -- this does not yet support sending to arbitrary real customer inboxes.",
+      "evidence": "pipeline/weekly_briefing_email.py FROM_ADDRESS; Resend's own sandbox restriction, not something this codebase controls"
+    },
+    {
+      "statement": "A company with no hospitals assigned in company_hospitals (the normal state for any real customer today, since no per-company hospital assignment UI exists yet -- STORY-009, not started) receives no briefing and no email, silently. This is correct behavior, not a bug, but there is no operator-facing signal yet that a company's hospital list is simply empty versus nothing being wrong.",
+      "evidence": "pipeline/briefing_agent.py generate_and_save_company_briefing() returns None when fetch_flagged_hospitals_for_company() is empty"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_weekly_briefing_email.py::test_send_email_with_retry_retries_on_retryable_error_then_succeeds"
+    },
+    {
+      "kind": "test",
+      "ref": "pipeline/test_weekly_briefing_email.py::test_send_email_with_retry_fails_after_exhausting_retries"
+    },
+    {
+      "kind": "test",
+      "ref": "pipeline/test_weekly_briefing_email.py::test_should_run_now_true_on_monday_6am_central"
+    }
+  ],
+  "measurementEvents": []
+}

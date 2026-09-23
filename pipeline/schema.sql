@@ -108,30 +108,63 @@ DROP POLICY IF EXISTS "public read" ON early_warning_flags;
 CREATE POLICY "public read" ON early_warning_flags FOR SELECT USING (true);
 
 -- STORY-003: grounded hospitals-at-risk briefings written by Claude Sonnet
--- 5 from early_warning_flags' own output (REQ-006). One row per
--- generation run; UNIQUE(as_of_date) makes re-running the same day
--- idempotent (replaces that day's briefing) instead of accumulating
--- duplicates. facts and provider_ccns are stored alongside body so a
--- saved briefing's grounding can be re-verified later without re-calling
--- Claude. Derived entirely from public CMS-sourced flags, same public-read
--- treatment as early_warning_flags above.
+-- 5 from early_warning_flags' own output (REQ-006). One row per company
+-- per day; UNIQUE(company_id, as_of_date) makes re-running the same day
+-- for the same company idempotent (replaces that day's briefing) instead
+-- of accumulating duplicates. facts and provider_ccns are stored
+-- alongside body so a saved briefing's grounding can be re-verified later
+-- without re-calling Claude.
 CREATE TABLE IF NOT EXISTS briefings (
     id             bigserial PRIMARY KEY,
+    company_id     uuid REFERENCES companies(id),
     as_of_date     date NOT NULL,
     provider_ccns  jsonb NOT NULL,   -- flagged hospitals this briefing covers
     facts          jsonb NOT NULL,   -- exact engine values Claude was given (REQ-004 audit trail)
     body           text NOT NULL,
     model          text NOT NULL,
-    generated_at   timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (as_of_date)
+    generated_at   timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS idx_briefings_as_of_date ON briefings(as_of_date);
 
 ALTER TABLE briefings ENABLE ROW LEVEL SECURITY;
 
+-- STORY-008 (.colaberry) / STORY-010 (.hospulse): briefings became
+-- company-scoped here. The original STORY-003 build predates
+-- company_hospitals (STORY-006) and generated one shared
+-- "all-flagged-hospitals-nationally" briefing per day -- that broke the
+-- moment a real weekly email had to go to a real per-company operator
+-- (253 flagged hospitals do not fit in one Claude response, and a
+-- company should only ever be briefed on hospitals it actually manages,
+-- mirroring the same RLS boundary already enforced for reads elsewhere).
+-- company_id is nullable only so the one pre-existing global row from
+-- STORY-003's own live verification doesn't break this migration; every
+-- row generated from here on has a real one. The migration statements
+-- below only matter for a database that already has the old table/policy
+-- from before this story; CREATE TABLE IF NOT EXISTS above already
+-- creates it correctly on a fresh database.
+ALTER TABLE briefings ADD COLUMN IF NOT EXISTS company_id uuid REFERENCES companies(id);
+ALTER TABLE briefings DROP CONSTRAINT IF EXISTS briefings_as_of_date_key;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'briefings_company_as_of_date_key'
+    ) THEN
+        ALTER TABLE briefings
+            ADD CONSTRAINT briefings_company_as_of_date_key UNIQUE (company_id, as_of_date);
+    END IF;
+END $$;
+
 DROP POLICY IF EXISTS "public read" ON briefings;
-CREATE POLICY "public read" ON briefings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "company scoped read" ON briefings;
+CREATE POLICY "company scoped read" ON briefings
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM company_members cm
+            WHERE cm.company_id = briefings.company_id AND cm.user_id = auth.uid()
+        )
+    );
 
 -- STORY-011: normalize operator-uploaded hospital-system exports (Epic,
 -- Cerner, etc.) into standard monthly metrics. Unlike the public CMS
@@ -322,6 +355,49 @@ CREATE POLICY "company scoped read" ON slipping_hospital_alerts
             SELECT 1 FROM company_hospitals ch
             JOIN company_members cm ON cm.company_id = ch.company_id
             WHERE ch.provider_ccn = slipping_hospital_alerts.provider_ccn
+              AND cm.user_id = auth.uid()
+        )
+    );
+
+-- STORY-008 (.colaberry) / STORY-010 (.hospulse): email the weekly
+-- hospitals-at-risk briefing to every real operator (REQ-014). There is
+-- no auth sign-up flow yet (STORY-006's own note), so company_members'
+-- bare user_id has nowhere to look up an email from -- add a real column
+-- rather than depend on a system that doesn't exist yet.
+ALTER TABLE company_members ADD COLUMN IF NOT EXISTS email text;
+
+-- One row per (company, week, recipient) send attempt. The UNIQUE
+-- constraint IS the idempotency key: reserved via
+-- INSERT ... ON CONFLICT DO NOTHING *before* Resend is ever called (see
+-- weekly_briefing_email.reserve_send_slot()), so a run triggered twice in
+-- the same week sends at most once per operator, even under a concurrent
+-- double-trigger. A 'failed' row is not auto-retried across separate runs
+-- -- the retry REQ-014 asks for is exponential backoff on transient
+-- errors within a single run; a permanently-failed row is a real,
+-- visible dead-letter a human reviews and re-triggers manually.
+CREATE TABLE IF NOT EXISTS weekly_briefing_emails (
+    id                   bigserial PRIMARY KEY,
+    company_id           uuid NOT NULL REFERENCES companies(id),
+    week_of              date NOT NULL,                    -- Monday of the week this email covers
+    recipient_email      text NOT NULL,
+    briefing_id          bigint NOT NULL REFERENCES briefings(id),
+    status               text NOT NULL DEFAULT 'pending',  -- 'pending' | 'sent' | 'failed'
+    provider_message_id  text,                             -- Resend's message id, once sent
+    error_message        text,                             -- populated only when status = 'failed'
+    sent_at              timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (company_id, week_of, recipient_email)
+);
+
+CREATE INDEX IF NOT EXISTS idx_weekly_briefing_emails_status ON weekly_briefing_emails(status);
+
+ALTER TABLE weekly_briefing_emails ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "company scoped read" ON weekly_briefing_emails;
+CREATE POLICY "company scoped read" ON weekly_briefing_emails
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM company_members cm
+            WHERE cm.company_id = weekly_briefing_emails.company_id
               AND cm.user_id = auth.uid()
         )
     );

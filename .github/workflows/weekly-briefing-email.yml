@@ -1,0 +1,42 @@
+name: Weekly briefing email
+
+# REQ-014: send the weekly hospitals-at-risk briefing every Monday at
+# 6:00 AM Central. GitHub Actions cron runs in UTC, and Central time is
+# either UTC-6 (CST) or UTC-5 (CDT) depending on the time of year, so both
+# offsets are scheduled below. weekly_briefing_email.should_run_now() is
+# the real gate that makes exactly one of these two firings do actual
+# work; the other exits as a no-op skip. workflow_dispatch exists so this
+# can be triggered on demand for testing or a demo, without waiting for
+# an actual Monday.
+on:
+  schedule:
+    - cron: "0 11 * * 1" # 6:00 AM CDT
+    - cron: "0 12 * * 1" # 6:00 AM CST
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Bypass the Monday 6am Central time gate"
+        type: boolean
+        default: false
+
+jobs:
+  send-weekly-briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly briefing email job
+        working-directory: pipeline
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          python3 weekly_briefing_email.py ${{ github.event.inputs.force == 'true' && '--force' || '' }}

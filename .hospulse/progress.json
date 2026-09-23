@@ -446,25 +446,35 @@
       "criteria": [
         {
           "text": "Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given the run is triggered twice for the same week, When the second run happens, Then no operator receives a second email.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given the email service fails, When the run finishes, Then the briefing is still saved in the portal and the failure is logged with a retry.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: A company's briefing only ever goes to that company's operators.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "pipeline/weekly_briefing_email.py",
+        "pipeline/test_weekly_briefing_email.py",
+        "pipeline/briefing_agent.py",
+        "pipeline/test_briefing_agent.py",
+        "pipeline/schema.sql",
+        "requirements.txt",
+        ".github/workflows/weekly-briefing-email.yml"
+      ],
+      "tests_added": [
+        "pipeline/test_weekly_briefing_email.py (11 tests: should_run_now/week_start_for time logic, build_subject/build_html formatting, send_email_with_retry retry/backoff/fail-fast/exhaustion)"
+      ],
+      "notes": "Real credential blockers surfaced and cleared with the user before writing code, not worked around: no RESEND_API_KEY existed, the frontend had never been deployed to Vercel (so no Vercel Cron target existed), and no operator email address was stored anywhere in the schema at all (company_members had only a bare user_id, and auth.users had zero rows -- no sign-up flow exists yet). Resolved by: adding a real email column to company_members; seeding one real company + one real operator using the user's own real email (redacted here; a public repo shouldn't carry it), since no real customer has signed up yet; choosing GitHub Actions cron over Vercel Cron since it needs no new infrastructure and matches this story's own task_guidance; and getting a real Resend API key from the user (added to .env, verified never committed). Chose GitHub Actions cron with two schedule entries (11:00 and 12:00 UTC) plus a should_run_now() Central-time gate inside the Python job itself, so the Monday-6am-Central requirement is met correctly across the DST transition rather than picking one UTC offset and drifting an hour off for half the year. Idempotency (criterion 2) is enforced by reserving a (company_id, week_of, recipient_email) row via INSERT...ON CONFLICT DO NOTHING *before* Resend is ever called -- proven live, not just asserted in a test: running the real job twice in a row sent exactly one email and left exactly one row in weekly_briefing_emails. Found mid-build that the existing briefing_agent.py (STORY-003/STORY-007) generated one shared briefing for every nationally-flagged hospital (253 of them) -- that failed a real live run outright (IncompleteBriefing, Claude couldn't name all 253 in one response) and was also wrong on its own terms, since a company should only ever be briefed on hospitals it actually manages (the same boundary STORY-006's RLS already enforces for reads). Fixed at the root: briefing_agent.py's briefings are now scoped per company via company_hospitals, with company_id added to the briefings table and its unique constraint changed to (company_id, as_of_date); weekly_briefing_email.py generates one briefing per company with real operators, in a loop where one company's briefing-generation failure (any of InvalidEngineOutput/ClaudeCallFailed/UngroundedBriefing/IncompleteBriefing) is isolated and does not block other companies' emails (criterion 3's failure-isolation, verified by code path, not yet exercised live since no failure occurred during the real run). Live-verified end to end for real: real Claude Sonnet 5 call scoped to 3 real currently-flagged hospitals (Hillcrest Medical Center, INTEGRIS Woodward, INTEGRIS Miami) assigned to a seeded real company, a real grounded 2,559-character briefing saved to production Supabase, a real email delivered via Resend with a real provider_message_id recorded, and the exact-once idempotency guarantee proven by re-running the job immediately afterward.",
+      "updated_at": "2026-09-23T23:00:00Z",
       "verification": {
         "state": "not_started",
         "criteria_passed": 0,

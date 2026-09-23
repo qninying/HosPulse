@@ -151,7 +151,7 @@ def test_generate_grounded_briefing_rejects_invalid_engine_output_before_calling
     hospital = FlaggedHospital("123456", "Memorial Rural Hospital", 2025, [])
     client = FakeClient([])
     with pytest.raises(InvalidEngineOutput):
-        generate_grounded_briefing(client, [hospital])
+        generate_grounded_briefing(client, [hospital], "company-1")
     assert client.messages.calls == 0
 
 
@@ -195,7 +195,8 @@ def test_happy_path_covers_every_flagged_hospital_and_is_grounded():
     hospital = _hospital()
     text = "Memorial Rural Hospital has an operating margin of -5.2% and 12.0 days cash on hand."
     client = FakeClient([text])
-    result = generate_grounded_briefing(client, [hospital], as_of_date=date(2026, 9, 23))
+    result = generate_grounded_briefing(client, [hospital], "company-1", as_of_date=date(2026, 9, 23))
+    assert result.company_id == "company-1"
     assert result.provider_ccns == ["123456"]
     assert result.body == text
     assert result.as_of_date == date(2026, 9, 23)
@@ -207,7 +208,7 @@ def test_ungrounded_figure_is_rejected_and_nothing_is_returned():
     text = "Memorial Rural Hospital is at risk, needing $2,000,000 to recover."
     client = FakeClient([text])
     with pytest.raises(UngroundedBriefing):
-        generate_grounded_briefing(client, [hospital])
+        generate_grounded_briefing(client, [hospital], "company-1")
 
 
 def test_missing_hospital_is_rejected():
@@ -215,11 +216,11 @@ def test_missing_hospital_is_rejected():
     text = "Memorial Rural Hospital has an operating margin of -5.2%."
     client = FakeClient([text])
     with pytest.raises(IncompleteBriefing):
-        generate_grounded_briefing(client, hospitals)
+        generate_grounded_briefing(client, hospitals, "company-1")
 
 
 def test_api_failure_propagates_as_claude_call_failed_and_saves_nothing():
     hospital = _hospital()
     client = FakeClient([_timeout_error()] * 4)
     with pytest.raises(ClaudeCallFailed):
-        generate_grounded_briefing(client, [hospital], sleep=lambda s: None)
+        generate_grounded_briefing(client, [hospital], "company-1", sleep=lambda s: None)
