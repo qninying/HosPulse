@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-010",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T00:17:55Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "inputs",
+      "value": "A file is treated as parsed tabular rows (header-keyed, like csv.DictReader output), not raw bytes -- PHI detection runs on column headers and cell values after parsing, not on the file's binary content.",
+      "evidence": "pipeline/phi_guardrail.py#scan_file_for_phi"
+    },
+    {
+      "dimension": "security_context",
+      "value": "PHI detection is two-layered: a deterministic column-header match against known patient-name/birth-date/record-number field names, plus a content-based fallback that catches an SSN-shaped value even under an unrelated header.",
+      "evidence": "pipeline/phi_guardrail.py#_CATEGORY_HEADERS, #_SSN_RE"
+    },
+    {
+      "dimension": "security_context",
+      "value": "The audit entry logged for a rejected file never carries the PHI value itself -- only the offending column name and category. Verified directly: the raw value is asserted absent from the logged entry's string representation, not just assumed absent.",
+      "evidence": "pipeline/phi_guardrail.py#PhiAuditEntry.as_dict; pipeline/test_phi_guardrail.py#test_gate_audit_log_never_contains_the_raw_row_content, #test_gate_birth_date_value_never_reaches_the_audit_log"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Built a gate function (ingest_file_with_phi_gate) around injected store/log_audit callables, rather than only a scan/detector function, so that 'reject before storage' and 'reject before logging' are enforced by construction and are genuinely testable now.",
+      "rationale": "STORY-005 (operator uploads) does not exist yet, so there is no real storage or logging call to wrap. STORY-011's grounding_guardrail.py was built as a standalone detector the same way and its story stayed unticked because nothing calls it -- ticking STORY-010 off a detector alone would repeat that gap. Injecting store/log_audit lets the actual gating behavior (store never runs on a rejected file; log_audit never receives row content) be proven with unit tests today, and STORY-005 supplies the real Supabase write and logger later without this function changing.",
+      "evidence": "pipeline/phi_guardrail.py#ingest_file_with_phi_gate; pipeline/test_phi_guardrail.py#test_gate_rejects_a_file_with_patient_names_before_storage, #test_gate_rejects_a_file_with_birth_dates_before_storage"
+    },
+    {
+      "statement": "SSN-shaped content (\\d{3}-\\d{2}-\\d{4}) is classified under the 'record_number' category, extending REQ-009's three named categories (names, birth dates, record numbers) rather than adding a fourth.",
+      "rationale": "REQ-009 does not name SSN explicitly, but a government identifier tied to a patient functions as exactly the kind of record number the requirement means to keep out; folding it into the existing category avoided widening the requirement's scope.",
+      "evidence": "pipeline/phi_guardrail.py#scan_file_for_phi (SSN match tagged category=\"record_number\")"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Detection of patient names and birth dates is header-based only; there is no content-based fallback for these two categories the way there is for record numbers (SSN pattern). A patient name under a generic header like 'value', or a birth date under a header that doesn't say DOB, would not be caught. Generic content matching was deliberately not attempted: free text can't be reliably classified as 'a name' without a model, and financial exports carry legitimate business dates (report date, posting date) that a naive date-shape check would false-positive on.",
+      "evidence": "pipeline/phi_guardrail.py module docstring; pipeline/test_phi_guardrail.py#test_ordinary_business_dates_do_not_trigger_a_false_rejection"
+    },
+    {
+      "statement": "The gate (ingest_file_with_phi_gate) is exercised only against injected test doubles for store/log_audit, since the real Supabase write and the real logger (STORY-005) do not exist in this repo yet. The gating logic is proven; the real side effects it will eventually wrap are not.",
+      "evidence": "pipeline/test_phi_guardrail.py#_Recorder"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_phi_guardrail.py (22 tests: header-based detection for all three REQ-009 categories, SSN-content fallback, false-positive avoidance on business dates, and the ingest gate proving rejection happens before storage and before the PHI value ever reaches a log); full pipeline/ suite (52 tests total) run clean with no regressions"
+    }
+  ],
+  "measurementEvents": []
+}
