@@ -1,14 +1,18 @@
-"""STORY-003: write a grounded hospitals-at-risk briefing.
+"""STORY-003 / STORY-007: write a grounded hospitals-at-risk briefing.
 
 REQ-006: produce a one-page plain-English briefing covering every hospital
-the early-warning engine (STORY-002) flagged.
-REQ-004: reject any AI-written briefing that states a number not present in
-the engine's own output -- enforced by grounding_guardrail.py, the one
-shared check both this agent and the future cost report co-pilot use.
+the early-warning engine (STORY-002) flagged, and reject any AI-written
+briefing that states a number not present in the engine's own output --
+enforced by grounding_guardrail.py, the one shared check both this agent and
+the future cost report co-pilot use.
 
-Three ways this can legitimately fail, all handled explicitly, none
+Four ways this can legitimately fail, all handled explicitly, none
 surfacing as an unhandled exception or a silent no-op:
 
+- InvalidEngineOutput: the engine's own output for a flagged hospital is
+  malformed (missing criteria, a criterion missing name/status/values) or
+  has no numeric facts at all. Checked before Claude is ever called.
+  Not saved.
 - ClaudeCallFailed: the API timed out or rate-limited on every attempt.
   Retried up to MAX_ATTEMPTS times with backoff, then raised. Nothing is
   saved.
@@ -18,8 +22,8 @@ surfacing as an unhandled exception or a silent no-op:
 - IncompleteBriefing: the response leaves out a hospital that was in the
   flagged list. Not saved.
 
-save_briefing() is the only write, called once, only after both checks
-pass -- there is no path that persists a partial result.
+save_briefing() is the only write, called once, only after every check
+passes -- there is no path that persists a partial result.
 
 Usage: python3 briefing_agent.py
 """
@@ -71,6 +75,12 @@ class IncompleteBriefing(Exception):
     """The response left out a hospital that was flagged. Not saved."""
 
 
+class InvalidEngineOutput(Exception):
+    """The engine's own output for a flagged hospital is malformed, or has
+    nothing numeric in it to ground a briefing in. Claude is never called
+    with it. Not saved."""
+
+
 @dataclass
 class FlaggedHospital:
     provider_ccn: str
@@ -110,6 +120,36 @@ def _flatten_numeric_facts(hospital: FlaggedHospital) -> dict[str, float]:
                     if isinstance(item, (int, float)) and not isinstance(item, bool):
                         facts[f"{hospital.provider_ccn}:{name}:{key}:{i}"] = float(item)
     return facts
+
+
+def validate_flagged_hospital(hospital: FlaggedHospital) -> None:
+    """REQ-006 / STORY-007: reject engine output that is structurally
+    malformed or has nothing numeric to brief on, before it ever reaches a
+    prompt. This is distinct from the grounding check below -- grounding
+    catches Claude inventing a number; this catches the engine handing us
+    garbage in the first place."""
+    if not hospital.criteria:
+        raise InvalidEngineOutput(
+            f"{hospital.display_name()} is flagged but has no criteria recorded -- "
+            "nothing for a briefing to be grounded in."
+        )
+    for criterion in hospital.criteria:
+        if not isinstance(criterion, dict) or "name" not in criterion or "status" not in criterion:
+            raise InvalidEngineOutput(
+                f"{hospital.display_name()} has a malformed criterion "
+                f"(missing name/status): {criterion!r}"
+            )
+        values = criterion.get("values")
+        if values is not None and not isinstance(values, dict):
+            raise InvalidEngineOutput(
+                f"{hospital.display_name()}'s criterion {criterion.get('name')!r} "
+                f"has a non-dict values field: {values!r}"
+            )
+    if not _flatten_numeric_facts(hospital):
+        raise InvalidEngineOutput(
+            f"{hospital.display_name()} has no numeric facts in its criteria -- "
+            "nothing to ground a briefing in."
+        )
 
 
 def build_facts(flagged: list[FlaggedHospital]) -> dict[str, float]:
@@ -240,6 +280,9 @@ def generate_grounded_briefing(
     fails. Raises IncompleteBriefing / UngroundedBriefing / ClaudeCallFailed
     rather than returning a partial result."""
     as_of_date = as_of_date or datetime.now(UTC).date()
+    for hospital in flagged:
+        validate_flagged_hospital(hospital)
+
     facts = build_facts(flagged)
     prompt = build_prompt(flagged)
 

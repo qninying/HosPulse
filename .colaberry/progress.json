@@ -327,20 +327,30 @@
       "criteria": [
         {
           "text": "Given engine output, When generating a briefing, Then the briefing is created from valid data only.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given invalid data in engine output, When generating a briefing, Then the briefing is rejected.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Each briefing is checked for grounding against the input data.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
+      "files_touched": [
+        "pipeline/briefing_agent.py",
+        "pipeline/test_briefing_agent.py"
+      ],
+      "tests_added": [
+        "pipeline/test_briefing_agent.py::test_validate_rejects_hospital_with_no_criteria",
+        "pipeline/test_briefing_agent.py::test_validate_rejects_criterion_missing_name_or_status",
+        "pipeline/test_briefing_agent.py::test_validate_rejects_criterion_with_non_dict_values",
+        "pipeline/test_briefing_agent.py::test_validate_rejects_hospital_with_no_numeric_facts",
+        "pipeline/test_briefing_agent.py::test_validate_passes_a_well_formed_hospital",
+        "pipeline/test_briefing_agent.py::test_generate_grounded_briefing_rejects_invalid_engine_output_before_calling_claude"
+      ],
+      "notes": "This is the eighth instance of the .colaberry/.hospulse story-numbering collision: REQ-006's Briefing Agent was already built and live-verified as STORY-003 (.hospulse numbering) in an earlier session, against real Claude Sonnet 5 and production Supabase. Two of the three criteria were already genuinely true and tested: briefings are built only from early_warning_flags.criteria (never any other source), and validate_ai_output_is_grounded rejects any AI-stated figure absent from the engine's own output. The third criterion -- 'invalid data in engine output is rejected' -- had a real, specific gap: all prior tests covered invalid AI output (ungrounded figures, missing hospitals), none covered invalid engine output itself. _flatten_numeric_facts previously just silently skipped a malformed criterion instead of rejecting the run. Added validate_flagged_hospital() (raises the new InvalidEngineOutput), called for every flagged hospital before Claude is ever invoked, rejecting: a flagged hospital with no criteria at all, a criterion missing name/status, a criterion whose values field is not a dict, and a hospital with no numeric facts anywhere in its criteria. Confirmed by test_generate_grounded_briefing_rejects_invalid_engine_output_before_calling_claude that the fake Claude client is never called in this path. Full pipeline suite: 109 passed, 1 skipped, no regressions.",
       "updated_at": null,
       "verification": {
         "state": "in_progress",

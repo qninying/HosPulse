@@ -8,11 +8,13 @@ from briefing_agent import (
     ClaudeCallFailed,
     FlaggedHospital,
     IncompleteBriefing,
+    InvalidEngineOutput,
     UngroundedBriefing,
     build_facts,
     call_claude_with_retry,
     check_coverage,
     generate_grounded_briefing,
+    validate_flagged_hospital,
 )
 
 
@@ -103,6 +105,54 @@ def test_build_facts_flattens_list_valued_criteria():
     facts = build_facts([hospital])
     assert facts["670781:days_in_ar_rising_two_years:days_in_ar:0"] == 30.0
     assert facts["670781:days_in_ar_rising_two_years:days_in_ar:2"] == 41.0
+
+
+# --- validate_flagged_hospital: reject bad engine output, not just bad AI output ---
+
+
+def test_validate_rejects_hospital_with_no_criteria():
+    hospital = FlaggedHospital("123456", "Memorial Rural Hospital", 2025, [])
+    with pytest.raises(InvalidEngineOutput):
+        validate_flagged_hospital(hospital)
+
+
+def test_validate_rejects_criterion_missing_name_or_status():
+    hospital = FlaggedHospital(
+        "123456", "Memorial Rural Hospital", 2025,
+        [{"values": {"operating_margin_pct": -5.2}}],
+    )
+    with pytest.raises(InvalidEngineOutput):
+        validate_flagged_hospital(hospital)
+
+
+def test_validate_rejects_criterion_with_non_dict_values():
+    hospital = FlaggedHospital(
+        "123456", "Memorial Rural Hospital", 2025,
+        [{"name": "operating_margin_negative", "status": "triggered", "values": "not a dict"}],
+    )
+    with pytest.raises(InvalidEngineOutput):
+        validate_flagged_hospital(hospital)
+
+
+def test_validate_rejects_hospital_with_no_numeric_facts():
+    hospital = FlaggedHospital(
+        "123456", "Memorial Rural Hospital", 2025,
+        [{"name": "operating_margin_negative", "status": "not_assessable", "values": {"reason": "no data"}}],
+    )
+    with pytest.raises(InvalidEngineOutput):
+        validate_flagged_hospital(hospital)
+
+
+def test_validate_passes_a_well_formed_hospital():
+    validate_flagged_hospital(_hospital())  # does not raise
+
+
+def test_generate_grounded_briefing_rejects_invalid_engine_output_before_calling_claude():
+    hospital = FlaggedHospital("123456", "Memorial Rural Hospital", 2025, [])
+    client = FakeClient([])
+    with pytest.raises(InvalidEngineOutput):
+        generate_grounded_briefing(client, [hospital])
+    assert client.messages.calls == 0
 
 
 # --- check_coverage ------------------------------------------------------

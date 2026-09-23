@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-007",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T20:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "current_workflow",
+      "value": "Grounding is enforced by comparing every dollar/percent/day-count figure the AI states against a flat dict of numbers actually present in the early-warning engine's own output; any figure not in that dict rejects the whole briefing before it is saved.",
+      "evidence": "pipeline/grounding_guardrail.py (validate_ai_output_is_grounded), pipeline/briefing_agent.py (generate_grounded_briefing)"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "Invalid engine output is rejected before the AI is ever called, not after: a flagged hospital with no criteria, a criterion missing name/status, a criterion with a non-dict values field, or a hospital with zero numeric facts anywhere in its criteria all raise InvalidEngineOutput and skip the Claude API call entirely.",
+      "evidence": "pipeline/briefing_agent.py (validate_flagged_hospital), pipeline/test_briefing_agent.py::test_generate_grounded_briefing_rejects_invalid_engine_output_before_calling_claude"
+    },
+    {
+      "dimension": "constraints",
+      "value": "Requirement-to-story crediting in this repo's .colaberry-numbered plan is not 1:1 with implementation order -- REQ-006's briefing agent was built and live-verified while implementing STORY-003 (.hospulse numbering, a prior session), and STORY-007 existed as an unticked requirement pointing at already-existing code until this review, plus one genuinely new piece of work (engine-output validation) that had not been built yet.",
+      "evidence": ".colaberry/progress.json STORY-007 notes; PROGRESS.md's STORY-003 entry documents the same briefing-agent build and live verification"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Distinguished 'invalid AI output' (grounding/coverage failures, already handled) from 'invalid engine output' (malformed or empty criteria, not previously handled) as two separate failure classes with two separate exception types, rather than folding the new check into the existing grounding check.",
+      "rationale": "The two failures have different causes and different fixes -- an ungrounded figure means Claude hallucinated; invalid engine output means the early-warning engine's own row was malformed or empty. Collapsing them into one exception would hide which system actually failed.",
+      "evidence": "pipeline/briefing_agent.py (InvalidEngineOutput vs UngroundedBriefing/IncompleteBriefing)"
+    }
+  ],
+  "limitations": [],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_briefing_agent.py::test_validate_rejects_hospital_with_no_criteria"
+    },
+    {
+      "kind": "test",
+      "ref": "pipeline/test_briefing_agent.py::test_validate_rejects_hospital_with_no_numeric_facts"
+    },
+    {
+      "kind": "test",
+      "ref": "pipeline/test_briefing_agent.py::test_generate_grounded_briefing_rejects_invalid_engine_output_before_calling_claude"
+    }
+  ],
+  "measurementEvents": []
+}
