@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 8,
+    "stories_verified": 9,
     "stories_submitted": 1,
-    "stories_in_progress": 5,
+    "stories_in_progress": 4,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 28,
-    "points_awarded": 2438
+    "criteria_passed": 31,
+    "points_awarded": 2495
   },
   "stories": [
     {
@@ -34,7 +34,7 @@
           "passed": true
         },
         {
-          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
       ],
@@ -309,19 +309,15 @@
       "notes": "Sixth instance of the .colaberry/.hospulse numbering collision, but this time .hospulse's version (\"Sign operators in and isolate each company's hospitals\", REQ-008+REQ-019) was the more complete blueprint -- companies/company_members tables, Supabase Auth, RLS on every customer table, a test that signs in as two companies. Built .colaberry's literal 3 acceptance criteria using that blueprint's approach, but deliberately did not build a sign-in UI: .colaberry's criteria talk about 'accessing data', not a login form, and no story in the 13-story plan is explicitly 'build the sign-in screen' -- raised with the user and confirmed before building. Real gap found before writing any SQL: no auth system, no companies table, and no table anywhere recorded which hospitals a management company manages -- 'hospitals' itself is deliberately public data (STORY-003's free Health Snapshot), so a company doesn't own rows there, it manages a subset via a new company_hospitals join table. Verified live before writing policies, not assumed: auth.uid() reads request.jwt.claim.sub (confirmed via pg_get_functiondef); postgres (DATABASE_URL's role) has rolbypassrls=true, confirming the pipeline's existing writes were never subject to RLS and won't break; anon/authenticated already hold blanket ALL-privilege grants on every table (Supabase's schema-level default) -- RLS is the only real restriction, which is exactly why STORY-011/012's zero-policy tables were correctly fail-closed and not a mistake. RLS policies form a dependency chain (hospital_monthly_metrics -> company_hospitals -> company_members -> auth.uid()) and Postgres evaluates each referenced table's own RLS under the querying role's privileges, not the table owner's -- company_members needed its own 'see your own row' policy or the whole chain would silently resolve to zero rows for everyone, discovered by reasoning through the mechanism before writing SQL, not by a failing test after the fact. export_conversions had no hospital reference at all until this story -- added a nullable provider_ccn column (extending STORY-005/011's file again, same pattern as adding is_duplicate for STORY-005) populated from the first metric row's hospital when status=ok; needs_mapping and failed outcomes correctly leave it NULL rather than guessing, since needs_mapping genuinely never identifies a hospital. No changes needed to the upload route or export_normalizer.py's core normalization logic -- scoping happens entirely through company_hospitals joining on provider_ccn, not anything recorded at upload time. company_members.user_id is a bare uuid, not foreign-keyed to auth.users(id): no real sign-up/sign-in flow exists yet (out of this story's scope, confirmed with the user), so there are no real Supabase Auth users to reference. Verified live end to end through the real export_normalizer.py pipeline (not just direct SQL): a real upload correctly populated export_conversions.provider_ccn, and a needs_mapping upload correctly left it NULL. All live test rows (both the manual proof and the automated integration-test fixture, run twice to confirm re-runnability) cleaned up afterward, confirmed empty by direct query. Not yet committed to git as of this entry -- pending explicit go-ahead to commit.",
       "updated_at": "2026-09-23T03:17:21Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 129,
-        "outstanding": [
-          "Given a company user, When accessing data, Then only their hospitals are visible.",
-          "Given an unauthorized access attempt, When accessing data, Then access is denied.",
-          "Trust: Row-level security is enforced on all data queries."
-        ]
+        "verified_at": "2026-09-23T03:20:50.520Z",
+        "commit_sha": "e4084d6aa38fbbc18aa6246930de1ed18426b5fb",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/e4084d6aa38fbbc18aa6246930de1ed18426b5fb",
+        "commit_at": "2026-09-23T03:20:17Z",
+        "points_awarded": 186,
+        "outstanding": []
       }
     },
     {
