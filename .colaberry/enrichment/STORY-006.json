@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-006",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T03:17:21Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "data",
+      "value": "A management company does not own rows in the public `hospitals` table -- it manages a subset of them via a new company_hospitals join table. The public CMS data (hospitals, cost_report_years, early_warning_flags) stays public-read regardless of company scoping; only the private operator-uploaded tables (hospital_monthly_metrics, export_conversions, slipping_hospital_alerts) are scoped by company.",
+      "evidence": "pipeline/schema.sql (company_hospitals table and its comment)"
+    },
+    {
+      "dimension": "security_context",
+      "value": "anon and authenticated Postgres roles already hold blanket ALL-privilege grants (SELECT/INSERT/UPDATE/DELETE) on every table in this schema via Supabase's schema-level default -- row-level security is the only mechanism restricting what those roles can actually see or change, confirmed by querying information_schema.role_table_grants directly rather than assumed.",
+      "evidence": "PROGRESS.md STORY-006 entry, Verification section (live grant query)"
+    },
+    {
+      "dimension": "systems",
+      "value": "auth.uid() in this Supabase instance reads the request.jwt.claim.sub Postgres session setting (confirmed via pg_get_functiondef, not assumed from generic Supabase docs), and the DATABASE_URL connection's role (postgres) has rolbypassrls=true -- it bypasses RLS entirely as the table owner, which is why the Python pipeline's existing writes were never subject to RLS and needed no changes for this story.",
+      "evidence": "PROGRESS.md STORY-006 entry, Notes"
+    },
+    {
+      "dimension": "constraints",
+      "value": "RLS policies that reference other tables in their USING clause are themselves subject to those other tables' RLS, evaluated under the querying role's own privileges, not the table owner's. A policy chain (hospital_monthly_metrics -> company_hospitals -> company_members) breaks silently (always zero rows, for every user) unless every table in the chain has its own policy permitting at least the legitimate self-referential read.",
+      "evidence": "pipeline/schema.sql (company_members' 'see own membership' policy, required for company_hospitals' and companies' own policies to resolve at all)"
+    },
+    {
+      "dimension": "unknowns",
+      "value": "company_members.user_id is a bare uuid, not foreign-keyed to auth.users(id) -- no real Supabase Auth sign-up/sign-in flow exists yet in this repo, so there are no real users to reference. This will need revisiting once a real auth flow exists.",
+      "evidence": "pipeline/schema.sql (company_members table comment)"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Built .colaberry's literal 3 acceptance criteria (real schema + real RLS + a real cross-company isolation test) but deliberately did not build a sign-in UI in this story, even though .hospulse's more detailed blueprint for the same requirement includes one.",
+      "rationale": ".colaberry's criteria talk about 'accessing data', not a login form. No story in the 13-story plan is explicitly 'build the sign-in screen'. Building a full auth UI now risks being redone once STORY-007/008 (briefings, email) clarify what operator-facing pages actually need. Raised with the user and confirmed before building.",
+      "evidence": "PROGRESS.md STORY-006 entry, Notes"
+    },
+    {
+      "statement": "Modeled company-to-hospital assignment as a new company_hospitals join table rather than adding a company_id column directly to the private data tables (hospital_monthly_metrics, export_conversions, slipping_hospital_alerts).",
+      "rationale": "A company manages a hospital, it doesn't own the private data rows directly -- the join lets scoping work entirely through provider_ccn, so no changes were needed to the upload path (STORY-005) or the normalizer's write logic to attribute a company at write time.",
+      "evidence": "pipeline/schema.sql (company_hospitals table, and the three 'company scoped read' policies that join through it)"
+    },
+    {
+      "statement": "Added a nullable provider_ccn column to export_conversions rather than leaving its audit rows permanently unscoped by any company.",
+      "rationale": "export_conversions had no hospital reference at all before this story -- without one, its rows could never be attributed to any company, leaving the upload audit trail either fully public or fully inaccessible to the operator who created it. A needs_mapping conversion genuinely has no identifiable hospital (the format was never recognized), so it correctly stays NULL rather than guessing.",
+      "evidence": "pipeline/schema.sql (export_conversions.provider_ccn); pipeline/export_normalizer.py#_provider_ccn_for"
+    },
+    {
+      "statement": "Wrote a real, permanent, opt-in-only integration test (pipeline/test_row_level_security.py) that exercises actual Postgres RLS via session-level JWT claim simulation, rather than treating the live verification as a one-off manual script.",
+      "rationale": "This is the Trust criterion for a security feature, and 'data leakage' is an explicit failure path to prevent -- a security boundary this important deserves a permanent, re-runnable regression test using the real mechanism, not just a manual proof that gets discarded. Kept out of the default pytest pipeline/ sweep (skipped unless RUN_RLS_INTEGRATION_TESTS=1 is set) per this project's own rule that integration tests must never run automatically against production.",
+      "evidence": "pipeline/test_row_level_security.py module docstring; confirmed skipped by default in the full pipeline/ suite"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "No real Supabase Auth sign-up/sign-in flow exists yet, so company_members.user_id values used in testing are synthetic UUIDs, not real authenticated users. The RLS mechanism itself is proven correct; it has not been exercised through an actual browser sign-in session.",
+      "evidence": "pipeline/test_row_level_security.py (uses uuid.uuid4() for user_a/user_b/stranger, not real auth.users rows)"
+    },
+    {
+      "statement": "No UI exists yet for assigning hospitals to companies or managing company membership -- companies, company_members, and company_hospitals rows can currently only be created via direct database access (as this story's own test does), not through any application interface.",
+      "evidence": "No frontend code references these tables yet -- grep of frontend/src/ confirms zero usages"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_export_normalizer.py (+3 tests: export_conversions.provider_ccn attribution for ok/needs_mapping/failed outcomes)"
+    },
+    {
+      "kind": "test",
+      "ref": "pipeline/test_row_level_security.py (6 tests against real Postgres RLS, opt-in via RUN_RLS_INTEGRATION_TESTS=1: per-company isolation on all three private tables, no-membership denial, anonymous denial; run twice to confirm re-runnability, confirmed skipped by default in the standard pytest pipeline/ run)"
+    }
+  ],
+  "measurementEvents": []
+}

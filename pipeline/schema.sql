@@ -178,3 +178,124 @@ CREATE INDEX IF NOT EXISTS idx_slipping_hospital_alerts_status ON slipping_hospi
 
 ALTER TABLE slipping_hospital_alerts ENABLE ROW LEVEL SECURITY;
 -- No policy added: fails closed until STORY-006 scopes access by management company.
+
+-- STORY-006: real per-management-company row-level security. Replaces
+-- the fail-closed placeholders above (export_conversions,
+-- hospital_monthly_metrics, slipping_hospital_alerts had zero policies)
+-- with actual scoping, now that a company/membership/hospital-assignment
+-- model exists to scope by.
+--
+-- anon and authenticated already hold blanket ALL-privilege grants on
+-- every table in this schema (Supabase's schema-level default) -- RLS is
+-- the only thing restricting them. A FOR SELECT policy below opens reads
+-- for a company's own data; INSERT/UPDATE/DELETE remain denied by RLS's
+-- default (no policy for a command = deny), so the trusted Python
+-- pipeline (which connects as the table owner and bypasses RLS entirely,
+-- confirmed live: `postgres` has rolbypassrls=true) stays the only write
+-- path -- no change needed there.
+--
+-- company_members.user_id is a bare uuid, not foreign-keyed to
+-- auth.users(id): no real sign-up/sign-in flow exists yet in this repo
+-- (deliberately out of this story's scope, confirmed with the user), so
+-- there are no real Supabase Auth users to reference yet. Added once a
+-- real auth flow creates them.
+
+CREATE TABLE IF NOT EXISTS companies (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name        text NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS company_members (
+    company_id  uuid NOT NULL REFERENCES companies(id),
+    user_id     uuid NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (company_id, user_id)
+);
+
+-- Which hospitals a management company manages -- a subset of the
+-- public `hospitals` table, not a copy of it. A hospital's public CMS
+-- data (hospitals, cost_report_years, early_warning_flags) stays
+-- public-read regardless of this table; this only scopes the private
+-- operator-uploaded data (below).
+CREATE TABLE IF NOT EXISTS company_hospitals (
+    company_id    uuid NOT NULL REFERENCES companies(id),
+    provider_ccn  text NOT NULL REFERENCES hospitals(provider_ccn),
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (company_id, provider_ccn)
+);
+
+CREATE INDEX IF NOT EXISTS idx_company_members_user ON company_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_company_hospitals_ccn ON company_hospitals(provider_ccn);
+
+ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_hospitals ENABLE ROW LEVEL SECURITY;
+
+-- Self-contained: no dependency on another table's RLS, so this always
+-- resolves regardless of policy evaluation order.
+DROP POLICY IF EXISTS "see own membership" ON company_members;
+CREATE POLICY "see own membership" ON company_members
+    FOR SELECT USING (user_id = auth.uid());
+
+-- Depends on company_members' own policy above being evaluable for the
+-- querying user -- RLS subqueries run under the querying role's own
+-- privileges, so without that policy this would always find zero rows.
+DROP POLICY IF EXISTS "see own company" ON companies;
+CREATE POLICY "see own company" ON companies
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM company_members cm
+            WHERE cm.company_id = companies.id AND cm.user_id = auth.uid()
+        )
+    );
+
+DROP POLICY IF EXISTS "see own companys hospitals" ON company_hospitals;
+CREATE POLICY "see own companys hospitals" ON company_hospitals
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM company_members cm
+            WHERE cm.company_id = company_hospitals.company_id AND cm.user_id = auth.uid()
+        )
+    );
+
+-- export_conversions had no hospital reference at all until now -- an
+-- audit row for a 'needs_mapping' file genuinely can't be attributed to
+-- a hospital (the format was never even identified), so this stays
+-- NULL in that case rather than guessing; export_normalizer.py populates
+-- it from the first successfully-mapped row when status = 'ok'.
+ALTER TABLE export_conversions ADD COLUMN IF NOT EXISTS provider_ccn text REFERENCES hospitals(provider_ccn);
+CREATE INDEX IF NOT EXISTS idx_export_conversions_provider ON export_conversions(provider_ccn);
+
+DROP POLICY IF EXISTS "company scoped read" ON export_conversions;
+CREATE POLICY "company scoped read" ON export_conversions
+    FOR SELECT USING (
+        provider_ccn IS NOT NULL AND EXISTS (
+            SELECT 1 FROM company_hospitals ch
+            JOIN company_members cm ON cm.company_id = ch.company_id
+            WHERE ch.provider_ccn = export_conversions.provider_ccn
+              AND cm.user_id = auth.uid()
+        )
+    );
+
+DROP POLICY IF EXISTS "company scoped read" ON hospital_monthly_metrics;
+CREATE POLICY "company scoped read" ON hospital_monthly_metrics
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM company_hospitals ch
+            JOIN company_members cm ON cm.company_id = ch.company_id
+            WHERE ch.provider_ccn = hospital_monthly_metrics.provider_ccn
+              AND cm.user_id = auth.uid()
+        )
+    );
+
+DROP POLICY IF EXISTS "company scoped read" ON slipping_hospital_alerts;
+CREATE POLICY "company scoped read" ON slipping_hospital_alerts
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM company_hospitals ch
+            JOIN company_members cm ON cm.company_id = ch.company_id
+            WHERE ch.provider_ccn = slipping_hospital_alerts.provider_ccn
+              AND cm.user_id = auth.uid()
+        )
+    );

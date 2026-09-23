@@ -15,6 +15,7 @@ import json
 from export_normalizer import (
     _log_phi_audit,
     _outcome_from_existing,
+    _provider_ccn_for,
     compute_file_hash,
     normalize_rows,
     parse_csv,
@@ -175,6 +176,26 @@ def test_outcome_from_existing_is_flagged_as_duplicate():
 def test_a_fresh_outcome_is_never_marked_duplicate():
     outcome = normalize_rows(EPIC_COLUMNS, [epic_row()])
     assert outcome.is_duplicate is False
+
+
+# -- STORY-006: export_conversions needs a hospital to scope RLS by.
+# needs_mapping/failed genuinely have no reliably-known hospital -- None
+# is the honest answer, not a gap to guess around.
+
+def test_provider_ccn_for_a_successful_outcome_uses_the_first_metric_rows_hospital():
+    outcome = normalize_rows(EPIC_COLUMNS, [epic_row(ccn="450099")])
+    assert _provider_ccn_for(outcome) == "450099"
+
+
+def test_provider_ccn_for_needs_mapping_is_none():
+    outcome = normalize_rows(["some_col"], [{"some_col": "1"}])
+    assert _provider_ccn_for(outcome) is None
+
+
+def test_provider_ccn_for_a_failed_outcome_is_none():
+    outcome = normalize_rows(EPIC_COLUMNS, [epic_row(month="not-a-date")])
+    assert outcome.status == "failed"
+    assert _provider_ccn_for(outcome) is None
 
 
 def test_parse_csv_round_trips_columns_and_rows():

@@ -163,6 +163,17 @@ def fetch_existing_conversion(source_file_hash: str, database_url: str) -> dict 
     }
 
 
+def _provider_ccn_for(outcome: ConversionOutcome) -> str | None:
+    """Pure: STORY-006 needs export_conversions attributed to a hospital
+    so RLS can scope it by company. A 'needs_mapping' or 'failed' outcome
+    genuinely has no reliably-known hospital (the format was never
+    identified, or the row-level error happened before we'd trust any
+    single row's data) -- None here is honest, not a gap to paper over."""
+    if not outcome.metric_rows:
+        return None
+    return outcome.metric_rows[0].provider_ccn
+
+
 def persist_conversion(
     outcome: ConversionOutcome, source_file: str, source_file_hash: str, database_url: str
 ) -> int:
@@ -176,8 +187,8 @@ def persist_conversion(
                 """
                 INSERT INTO export_conversions (
                     source_file, source_file_hash, source_system, status,
-                    metrics_count, error_message
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                    metrics_count, error_message, provider_ccn
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -187,6 +198,7 @@ def persist_conversion(
                     outcome.status,
                     len(outcome.metric_rows),
                     outcome.error_message,
+                    _provider_ccn_for(outcome),
                 ),
             )
             return cur.fetchone()[0]
