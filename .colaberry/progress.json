@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 3,
+    "stories_verified": 4,
     "stories_submitted": 1,
-    "stories_in_progress": 10,
+    "stories_in_progress": 9,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 13,
-    "points_awarded": 2153
+    "criteria_passed": 16,
+    "points_awarded": 2210
   },
   "stories": [
     {
@@ -34,7 +34,7 @@
           "passed": true
         },
         {
-          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
       ],
@@ -178,19 +178,15 @@
       "notes": "No Supabase client credentials (project URL + anon key) existed locally at the start of this story -- only DATABASE_URL, a direct Postgres connection string used by the Python pipeline. Considered querying Postgres directly from Next.js with that string instead of requesting a new credential, but rejected it: Vercel serverless functions are ephemeral and would exhaust Supabase's direct-connection limit under real traffic, which is exactly why Supabase fronts Postgres with a pooler and recommends the REST API / supabase-js for serverless clients. Got the anon/publishable key from the user instead (frontend/.env.local, gitignored) and built on supabase-js, which also matches this story's own task_guidance ('Next.js frontend ... with data from Supabase'). Search is case-insensitive partial-name match (ilike), not exact match, since public users won't know a hospital's exact CMS-registered name string -- a stricter reading of 'a hospital name' was considered and rejected as needlessly hostile to the actual user. Verified against live production data, not just mocks: a hospital with all three fiscal years (ST ANTHONY SHAWNEE HOSPITAL, CCN 370149) renders 2023/2024/2025 in order, and a hospital with a genuine gap (ANSON GENERAL HOSPITAL, CCN 670781, missing FY2023) renders only its real 2 years plus an explicit 'reporting gap, not an error' note rather than a fabricated third row. The 'notes public data lag' criterion is a static, honest disclosure about CMS's filing-and-processing delay, not a computed lag figure -- there is no per-row lag data in the source to compute one from, and inventing a number would violate the project's own grounding guardrail (REQ-004).",
       "updated_at": "2026-09-23T20:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 191,
-        "outstanding": [
-          "Given a hospital name, When searched, Then the system displays three years of trends.",
-          "Given a non-existent hospital, When searched, Then the system returns a 'not found' message.",
-          "Trust: Each trend figure shows the data year and notes public data lag."
-        ]
+        "verified_at": "2026-09-23T00:59:31.919Z",
+        "commit_sha": "0e20debc6b35c354ed2702dc71f0dc24d3504742",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/0e20debc6b35c354ed2702dc71f0dc24d3504742",
+        "commit_at": "2026-09-23T00:58:25Z",
+        "points_awarded": 248,
+        "outstanding": []
       }
     },
     {
