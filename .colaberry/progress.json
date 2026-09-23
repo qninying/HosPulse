@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 2,
+    "stories_verified": 3,
     "stories_submitted": 1,
-    "stories_in_progress": 11,
+    "stories_in_progress": 10,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 10,
-    "points_awarded": 2096
+    "criteria_passed": 13,
+    "points_awarded": 2153
   },
   "stories": [
     {
@@ -437,19 +437,15 @@
       "notes": "REQ-009's own wording ('reject... before it is stored or logged') requires real gating behavior, not just a detector -- STORY-011's grounding_guardrail.py was built the same standalone way and stayed unticked until something actually calls it, so scan_file_for_phi() alone would not have earned these criteria. Added ingest_file_with_phi_gate(file_name, rows, store=, log_audit=): store is only called when the scan is clean, never for a rejected file (proven by test_gate_rejects_a_file_with_patient_names_before_storage / test_gate_rejects_a_file_with_birth_dates_before_storage asserting store was never called), and log_audit always receives a PhiAuditEntry naming the column and category that triggered rejection but never the row content itself (test_gate_audit_log_never_contains_the_raw_row_content, test_gate_birth_date_value_never_reaches_the_audit_log). store/log_audit are injected because the real Supabase write and logger do not exist yet (STORY-005, not started) -- STORY-005 plugs in the real implementations without changing this function. Two-layer detection: column-header match for all three categories (deterministic, matches how a real hospital-system export would label these fields) plus an SSN-content fallback for a column mislabeled with an innocuous header. Deliberately not attempted: generic content-based matching for names or dates by shape alone -- financial exports carry legitimate business dates (report date, posting date) and free text cannot reliably be classified as 'a name' without a model, so that would trade false rejections of clean ledger data for coverage the header check already provides in the realistic case; documented as a known limitation in the module docstring, not left silent.",
       "updated_at": "2026-09-22T23:45:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 129,
-        "outstanding": [
-          "Given a file containing patient names, when uploaded, then the system should reject it before storage.",
-          "Given a file containing birth dates, when uploaded, then the system should reject it before logging.",
-          "Trust: Given a rejected file, when logged, then it should include an audit entry stating the reason for rejection."
-        ]
+        "verified_at": "2026-09-23T00:21:42.597Z",
+        "commit_sha": "ff9ab09a11a1ac1a960258905744217ac4460fd4",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/ff9ab09a11a1ac1a960258905744217ac4460fd4",
+        "commit_at": "2026-09-23T00:20:27Z",
+        "points_awarded": 186,
+        "outstanding": []
       }
     },
     {
