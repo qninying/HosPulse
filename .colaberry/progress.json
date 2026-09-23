@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 5,
+    "stories_verified": 6,
     "stories_submitted": 1,
-    "stories_in_progress": 8,
+    "stories_in_progress": 7,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 19,
-    "points_awarded": 2267
+    "criteria_passed": 22,
+    "points_awarded": 2324
   },
   "stories": [
     {
@@ -493,19 +493,15 @@
       "notes": "Built under .colaberry's STORY-011 definition (Convert Hospital System Exports to Standard Metrics, REQ-011, release r1) after finding this is a third instance of the .colaberry/.hospulse numbering collision already documented for STORY-010 and STORY-003: .hospulse's own STORY-011 is an unrelated cost-report-co-pilot story (REQ-015, release r4), and its own REQ-011 equivalent is fulfilled by .hospulse's STORY-008 instead, which is also not started. Followed the same precedent as before -- build .colaberry's definition, leave docs/stories/STORY-011.md un-rewritten since it reflects .hospulse's numbering repo-wide, not just this one file. No operator-upload path exists yet (STORY-005, not started), so 'an export from a hospital system' is raw file bytes handed directly to export_normalizer.run() -- the upload UI is out of this story's scope. Two illustrative vendor mappings (Epic, Cerner) prove the mechanism: mappings.detect_format() matches by exact column-fingerprint subset, never fuzzy/partial (confirmed live: an export missing even one expected Epic column falls through to needs_mapping rather than being forced through), and both vendors' distinct column layouts reconcile onto the same four standard metric names with identical values for the same underlying data (confirmed live). Column layouts for both vendors are illustrative -- no real Epic/Cerner export sample was available to build against, unlike hcris_import.py's worksheet citations which were all confirmed against a real downloaded file; a real vendor's mapping module would need a real sample to write against. Idempotency: export_conversions keyed on a SHA-256 of the raw file bytes (not the filename -- a re-uploaded file with a new name is still the same file, a corrected file with the same name is not), confirmed live that reprocessing identical content under a different filename returns the first run's outcome without a second audit row; hospital_monthly_metrics upserts on (provider_ccn, month, metric_name). Both new tables get RLS enabled with ZERO policies, deliberately -- this is a management company's private data, not public CMS data like hospitals/cost_report_years, and no per-company scoping exists yet (STORY-006, not started), so this fails closed rather than defaulting to the public-read policy the CMS tables use. Found mid-task that the whole-project PHI guardrail (REQ-009, STORY-010) applies to this ingestion path too and wasn't being called -- the same lesson this repo already learned once for STORY-011's own grounding_guardrail sitting unticked until something called it. Wired in phi_guardrail.ingest_file_with_phi_gate() rather than rebuilding detection: confirmed live that a hospital export carrying a 'Patient Name' column is rejected (PhiRejectedError, raised rather than folded into ConversionOutcome.status so a caller can't mistake a security rejection for a normal outcome) before either export_conversions or hospital_monthly_metrics is touched, with a structured stdout audit line containing the flagged column/category/reason but never the cell value itself; a clean file re-verified working end to end afterward. Extracted the previously-duplicated load_env() into pipeline/env.py once this third file needed it, per this project's own 'three is the threshold' composition rule -- hcris_import.py and early_warning.py now import it instead of each defining their own copy; full 76-test suite re-verified green after the refactor. All live verification runs cleaned their test rows from the production tables afterward.",
       "updated_at": "2026-09-23T01:56:13Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-23T02:02:35.005Z",
         "commit_sha": "cbac954e43ccfc7244b40407877349d94d119d88",
         "commit_url": "https://github.com/qninying/HosPulse/commit/cbac954e43ccfc7244b40407877349d94d119d88",
         "commit_at": "2026-09-22T20:49:43Z",
-        "points_awarded": 129,
-        "outstanding": [
-          "Given an export from a hospital system, when processed, then it should convert into a standard set of monthly metrics.",
-          "Given an export with an unknown format, when processed, then it should be marked as 'needs mapping'.",
-          "Trust: Given a conversion, when logged, then it should include an audit entry linking the export to the resulting metrics."
-        ]
+        "points_awarded": 186,
+        "outstanding": []
       }
     },
     {
