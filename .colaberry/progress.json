@@ -34,7 +34,7 @@
           "passed": true
         },
         {
-          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
       ],
@@ -196,21 +196,27 @@
       "criteria": [
         {
           "text": "Given computed metrics, When flagging criteria are met, Then the system flags the hospital.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given missing data, When flagging criteria are checked, Then the system marks the hospital as 'not assessable'.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Each flag stores the exact values that triggered it.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "pipeline/schema.sql",
+        "pipeline/early_warning.py",
+        "pipeline/test_early_warning.py"
+      ],
+      "tests_added": [
+        "pipeline/test_early_warning.py (10 tests: each of the 3 criteria genuinely triggering, a fully healthy hospital with real falling-AR data correctly not flagged, missing metrics marked not_assessable rather than silently cleared, a real trigger winning over an unrelated missing metric, fewer-than-3-years and a real non-consecutive reporting gap both correctly not_assessable for the AR-trend criterion, and a falling AR trend correctly not_triggered rather than not_assessable)"
+      ],
+      "notes": "Missing data is never treated as 'no problem': a criterion whose required metric is null is 'not_assessable', not 'not_triggered', and a hospital is only reported 'not_flagged' overall if every criterion was actually checked -- an early-warning system that quietly clears a hospital it couldn't check would defeat its own purpose. Precedence is flagged > not_assessable > not_flagged, so a real trigger is never hidden behind an unrelated missing metric (verified live: CCN 123456-style case with a real trigger + a missing metric elsewhere still flags). 'Days in A/R rising two years in a row' requires three CONSECUTIVE fiscal years, not just the latest three rows on file -- a hospital with a real reporting gap (missing fiscal year, an already-known pattern in this dataset) is correctly not_assessable for this one criterion rather than comparing non-adjacent years as if they were adjacent, which would silently understate what 'two years in a row' actually means. Flags are stored as one current-state row per hospital (early_warning_flags, PK provider_ccn), replaced on each run via ON CONFLICT DO UPDATE, not appended as history -- re-running the evaluator is idempotent (verified live: ran twice against production, 274 rows before and after, no duplicates, identical distribution). Ran for real against all 274 hospitals in production Supabase: 257 flagged, 16 not assessable, 1 genuinely healthy (RICE MEDICAL CENTER, CCN 451312 -- 5.84% margin, 55.8 days cash, falling A/R). The high flag rate is a real finding about this population (rural/Critical Access hospitals nationally run on thin or negative margins), not a logic bug -- spot-checked individual hospitals' exact stored values against the flag verdict to confirm. Public read RLS on the new table, same as hospitals/cost_report_years: no management-company scoping exists yet since STORY-006 (row-level security) and STORY-005 (operator uploads, the thing that would actually need company-level scoping) aren't built. Reused the exact 'latest 3 fiscal years, ascending' query shape from frontend/src/lib/hospitalDetail.ts so the flag evaluator and the public Health Snapshot page can never disagree about which years count as 'the latest three'.",
+      "updated_at": "2026-09-23T21:00:00Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

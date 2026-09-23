@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-004",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T21:00:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "data",
+      "value": "Across all 274 real hospitals in production (OK+TX rural/Critical Access), 257 are flagged by at least one early-warning criterion, 16 cannot be fully assessed (missing current-year metrics or fewer than 3 years of data), and 1 is genuinely healthy on all three criteria.",
+      "evidence": "pipeline/early_warning.py (run() output against production Supabase, spot-checked per-hospital)"
+    },
+    {
+      "dimension": "constraints",
+      "value": "\"Days in A/R rising two years in a row\" cannot be honestly evaluated when a hospital has a reporting gap (a missing fiscal year already known to exist in this dataset) between its available years, since the three years being compared would not actually be consecutive.",
+      "evidence": "pipeline/test_early_warning.py::test_a_real_reporting_gap_is_not_assessable_not_silently_compared"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "A criterion whose required metric is missing is reported as 'not_assessable', never as 'not_triggered', and a hospital is only 'not_flagged' overall if every one of its three criteria was actually checked.",
+      "rationale": "An early-warning system that quietly clears a hospital it couldn't actually check would defeat its own purpose -- treating missing data as 'no problem found' is a false negative, not a neutral outcome.",
+      "evidence": "pipeline/early_warning.py#evaluate_early_warning_flags"
+    },
+    {
+      "statement": "Overall hospital status uses the precedence flagged > not_assessable > not_flagged, so a real trigger on one criterion is never hidden by an unrelated missing metric on another.",
+      "rationale": "The point of the system is to surface real problems; a missing operating-margin figure must not suppress a genuine days-cash-on-hand trigger found elsewhere.",
+      "evidence": "pipeline/test_early_warning.py::test_a_real_trigger_wins_over_a_missing_metric_elsewhere"
+    },
+    {
+      "statement": "Flags are stored as one current-state row per hospital (early_warning_flags, primary key provider_ccn), replaced via ON CONFLICT DO UPDATE on every run, not appended as a history log.",
+      "rationale": "Matches the project-wide idempotency requirement -- re-running the evaluator after a new fiscal year is imported must update a hospital's flag state, not accumulate duplicate or stale rows.",
+      "evidence": "pipeline/schema.sql (early_warning_flags table + verified live: 274 rows before and after a second run, identical distribution)"
+    },
+    {
+      "statement": "The flag evaluator queries the latest 3 fiscal years per hospital using the same 'partition by hospital, order by fiscal_year desc, limit 3' shape as the public Health Snapshot's own trend query.",
+      "rationale": "So the flag evaluator and the public-facing trend page can never disagree about which years count as 'the latest three' for the same hospital.",
+      "evidence": "pipeline/early_warning.py#fetch_all_hospital_years"
+    },
+    {
+      "statement": "The new early_warning_flags table has the same public-read RLS policy as hospitals and cost_report_years.",
+      "rationale": "This data is derived entirely from public CMS cost reports with no management-company-specific scoping yet -- STORY-006 (row-level security) and STORY-005 (operator uploads, the thing that would actually need company-level scoping) are not built yet.",
+      "evidence": "pipeline/schema.sql"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The evaluator recomputes flags for every hospital on each run rather than only hospitals whose metrics changed since the last run -- fine at 274 rows, would need a changed-since filter at meaningfully larger scale.",
+      "evidence": "pipeline/early_warning.py#run"
+    },
+    {
+      "statement": "Flag history is not retained -- each run overwrites the previous evaluation for a hospital, so there is no way yet to see when a hospital's status changed over time.",
+      "evidence": "pipeline/schema.sql (early_warning_flags primary key is provider_ccn alone)"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_early_warning.py"
+    }
+  ],
+  "measurementEvents": []
+}

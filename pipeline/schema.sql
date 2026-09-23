@@ -81,3 +81,28 @@ CREATE POLICY "public read" ON hospitals FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "public read" ON cost_report_years;
 CREATE POLICY "public read" ON cost_report_years FOR SELECT USING (true);
+
+-- STORY-004: early warning flags, computed from cost_report_years (REQ-004
+-- / REQ-005). One row per hospital, replaced (not appended to) each time
+-- the evaluator runs -- this is a current-state table, not a history log.
+-- Public read, same as the two tables above: this is derived entirely from
+-- public CMS data with no management-company-specific scoping yet (that
+-- arrives with STORY-006's row-level security, once operator-uploaded data
+-- exists to scope).
+CREATE TABLE IF NOT EXISTS early_warning_flags (
+    provider_ccn      text PRIMARY KEY REFERENCES hospitals(provider_ccn),
+    as_of_fiscal_year int,              -- latest fiscal year evaluated; NULL if the hospital has no cost report data at all
+    status            text NOT NULL,    -- 'flagged' | 'not_flagged' | 'not_assessable'
+    -- Per-criterion results, each with the exact values that produced it
+    -- (REQ-005's trust requirement) -- see pipeline/early_warning.py's
+    -- CriterionResult.to_json() for the exact shape.
+    criteria          jsonb NOT NULL DEFAULT '[]'::jsonb,
+    evaluated_at      timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_early_warning_flags_status ON early_warning_flags(status);
+
+ALTER TABLE early_warning_flags ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "public read" ON early_warning_flags;
+CREATE POLICY "public read" ON early_warning_flags FOR SELECT USING (true);
