@@ -34,7 +34,7 @@
           "passed": true
         },
         {
-          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
       ],
@@ -511,21 +511,27 @@
       "criteria": [
         {
           "text": "Given hospital performance data, when analyzed, then slipping hospitals should be surfaced at least 4 weeks earlier than the current cycle.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a hospital flagged as slipping, when reviewed, then it should provide details on performance decline.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Given a slipping hospital alert, when logged, then it should include an audit entry with the analysis date and details.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "pipeline/schema.sql",
+        "pipeline/slipping_detector.py",
+        "pipeline/test_slipping_detector.py"
+      ],
+      "tests_added": [
+        "pipeline/test_slipping_detector.py (12 tests: each of the 3 criteria genuinely triggering off real month-over-month values, a fully healthy hospital correctly not_slipping, no monthly data and a single month both correctly not_assessable rather than a guessed verdict, a missing value in either month not_assessable rather than a false pass, a real trigger winning over an unrelated missing metric, a gap between the two latest months correctly not_assessable rather than comparing across it, consecutive months spanning a year boundary correctly assessable, only the two latest months of a longer history being compared, and no change between months correctly not_triggered rather than not_slipping by omission)"
+      ],
+      "notes": "REQ-016 (\"surface a slipping hospital at least 4 weeks earlier than the operator's current reporting cycle\") names no timestamped 'operator reporting cycle' anywhere in this system to literally measure elapsed time against. Confirmed with the user before building: the defensible reading is structural, not a literal duration -- detection runs automatically the moment a month's export is normalized (STORY-011), rather than waiting for an operator's own roughly-monthly manual review, which is what '4 weeks earlier' means in practice. Verified live: as soon as an August export was normalized, the hospital was flagged 'slipping' in the same run, with no separate review step in between. REQ-016 also gives no numeric thresholds, unlike REQ-004/REQ-005's explicit 'below 0%' / 'below 30 days' -- also confirmed with the user before building rather than inventing an unstated magic number: each of the 3 criteria (cash_on_hand declining, denial_rate_pct rising, ar_balance rising) triggers on a plain month-over-month directional change between the two latest consecutive months, mirroring STORY-004's own 'two in a row' shape for its annual AR-trend criterion but requiring only 2 months instead of 3 years since monthly data updates much faster. Same missing-data philosophy as STORY-004: a criterion with a null required metric, or whose two latest months are not genuinely consecutive calendar months (a gap, not just 'the two most recent rows'), is not_assessable, never a guessed verdict; precedence is slipping > not_assessable > not_slipping so a real trigger is never hidden behind an unrelated gap (verified: a missing cash_on_hand value alongside a genuine denial-rate spike still flags). slipping_hospital_alerts gets RLS enabled with ZERO policies, deliberately different from early_warning_flags' public-read policy -- this table is derived from hospital_monthly_metrics (STORY-011's private, operator-uploaded data), not public CMS data, and no per-company scoping exists yet (STORY-006, not started). One current-state row per hospital, replaced via ON CONFLICT DO UPDATE on each run, same as early_warning_flags -- confirmed live idempotent (re-running immediately after produced the same single row, not a duplicate). Verified live end to end through the real STORY-011 pipeline, not synthetic rows inserted directly: normalized two real consecutive months' exports for one hospital (cash dropping $200k to $150k, denial rate rising 5% to 9%, AR balance unchanged), then ran the detector and confirmed it correctly flagged 'slipping' with cash_on_hand_declining and denial_rate_rising both triggered (exact before/after values stored) and ar_balance_rising correctly not_triggered (unchanged is not a false positive). All live test rows deleted from the production tables afterward.",
+      "updated_at": "2026-09-23T02:15:03Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

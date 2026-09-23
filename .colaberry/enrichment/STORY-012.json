@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-012",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T02:15:03Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "success_definition",
+      "value": "\"4 weeks earlier than the operator's current reporting cycle\" is implemented structurally, not as a measured duration: detection runs automatically the moment a month's export is normalized (STORY-011), rather than waiting for an operator's own roughly-monthly manual review. There is no timestamped \"operator reporting cycle\" anywhere in this system to compare elapsed time against.",
+      "evidence": "pipeline/slipping_detector.py module docstring; verified live: a hospital was flagged 'slipping' in the same run as the export that revealed the decline, with no separate review step in between"
+    },
+    {
+      "dimension": "data",
+      "value": "Slipping detection uses 3 concrete month-over-month criteria against hospital_monthly_metrics (STORY-011's output): cash_on_hand declining, denial_rate_pct rising, and ar_balance rising between the two latest consecutive calendar months, each triggering on plain directional change rather than a percentage threshold.",
+      "evidence": "pipeline/slipping_detector.py#evaluate_slipping, #_evaluate_cash_declining, #_evaluate_denial_rate_rising, #_evaluate_ar_balance_rising"
+    },
+    {
+      "dimension": "security_context",
+      "value": "slipping_hospital_alerts (derived from private operator-uploaded monthly data) gets RLS enabled with zero policies, unlike early_warning_flags (derived from public CMS data), which is public-read -- the same table shape as an existing story's table can still need the opposite RLS treatment depending on what it's derived from.",
+      "evidence": "pipeline/schema.sql (slipping_hospital_alerts RLS block, contrasted with early_warning_flags')"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Interpreted REQ-016's \"4 weeks earlier than the operator's current reporting cycle\" as a structural guarantee (automatic detection at data-ingestion time) rather than a literal elapsed-time measurement, and interpreted the absence of numeric thresholds as \"trigger on any month-over-month directional change\" rather than inventing a percentage cutoff.",
+      "rationale": "No timestamped 'operator reporting cycle' exists anywhere in this system to measure against, and REQ-016 gives no numeric thresholds the way REQ-004/REQ-005 explicitly did ('below 0%', 'below 30 days'). Inventing either a fake elapsed-time number or an unstated percentage threshold would misrepresent what the requirement actually specifies. Both readings were raised with the user and confirmed before building.",
+      "evidence": "pipeline/slipping_detector.py module docstring"
+    },
+    {
+      "statement": "Required the two latest months to be genuinely consecutive calendar months (not just 'the two most recent rows on file') before assessing any trend criterion; a gap is not_assessable.",
+      "rationale": "Comparing non-adjacent months across a gap as if they were adjacent would silently misstate what a month-over-month trend claim actually means -- same reasoning STORY-004 already applied to its annual days-in-AR trend criterion for a real fiscal-year reporting gap.",
+      "evidence": "pipeline/slipping_detector.py#_months_apart, #evaluate_slipping; pipeline/test_slipping_detector.py#test_a_gap_between_the_two_latest_months_is_not_assessable_not_silently_compared"
+    },
+    {
+      "statement": "slipping_hospital_alerts gets RLS enabled with zero policies, matching STORY-011's tables rather than early_warning_flags' public-read policy.",
+      "rationale": "This table is derived from hospital_monthly_metrics, which is private management-company data with no per-company scoping built yet (STORY-006), not public CMS data like cost_report_years -- the source data's privacy, not the destination table's superficial shape, determines the RLS treatment.",
+      "evidence": "pipeline/schema.sql (slipping_hospital_alerts RLS block)"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Each criterion compares only the two latest consecutive months; a hospital with a long, gradual multi-month decline that never shows a single month-over-month directional flip in one of the three tracked metrics would not be flagged. There is no multi-month trend regression, only a two-point comparison.",
+      "evidence": "pipeline/slipping_detector.py#evaluate_slipping"
+    },
+    {
+      "statement": "Verified against real monthly data produced by STORY-011's normalizer for one hospital across two months. Behavior across many hospitals with varied, longer real histories (once STORY-005's upload path exists and real operators are uploading exports) has not been observed.",
+      "evidence": "PROGRESS.md STORY-012 entry, Verification section"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_slipping_detector.py (12 tests: each of the 3 criteria genuinely triggering, a fully healthy hospital not_slipping, no data and a single month both not_assessable, a missing value in either month not_assessable rather than a false pass, a real trigger winning over an unrelated missing metric, a gap between the two latest months not_assessable, consecutive months across a year boundary assessable, only the two latest months of a longer history compared, and no change correctly not_triggered); full pipeline/ suite (88 tests) run clean with no regressions"
+    }
+  ],
+  "measurementEvents": []
+}

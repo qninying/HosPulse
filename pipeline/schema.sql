@@ -156,3 +156,25 @@ CREATE INDEX IF NOT EXISTS idx_hospital_monthly_metrics_conversion ON hospital_m
 ALTER TABLE export_conversions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hospital_monthly_metrics ENABLE ROW LEVEL SECURITY;
 -- No policies added: fails closed until STORY-006 scopes access by management company.
+
+-- STORY-012: surface slipping hospitals from operator-uploaded monthly
+-- metrics (hospital_monthly_metrics, STORY-011), ahead of an operator's
+-- own monthly review cycle. Same private-data treatment as STORY-011's
+-- tables above, NOT early_warning_flags' public-read policy -- this is
+-- derived from private management-company data, not public CMS data.
+CREATE TABLE IF NOT EXISTS slipping_hospital_alerts (
+    provider_ccn   text PRIMARY KEY REFERENCES hospitals(provider_ccn),
+    as_of_month    date,              -- latest month evaluated; NULL if no monthly data exists at all
+    status         text NOT NULL,     -- 'slipping' | 'not_slipping' | 'not_assessable'
+    -- Per-criterion results, mirroring early_warning_flags.criteria's
+    -- shape (REQ-016's "provide details on performance decline" / Trust
+    -- criterion) -- see pipeline/slipping_detector.py's
+    -- CriterionResult.to_json() for the exact shape.
+    criteria       jsonb NOT NULL DEFAULT '[]'::jsonb,
+    analyzed_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_slipping_hospital_alerts_status ON slipping_hospital_alerts(status);
+
+ALTER TABLE slipping_hospital_alerts ENABLE ROW LEVEL SECURITY;
+-- No policy added: fails closed until STORY-006 scopes access by management company.
