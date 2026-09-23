@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-011",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T01:56:13Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "systems",
+      "value": "An operator-uploaded hospital-system export is treated as parsed CSV rows (csv.DictReader output), not raw file bytes, once it reaches the mapping layer -- source-system detection and metric mapping both operate on column headers and cell values.",
+      "evidence": "pipeline/export_normalizer.py#parse_csv, #normalize_rows"
+    },
+    {
+      "dimension": "integrations",
+      "value": "Each hospital system (Epic, Cerner, etc.) is represented by one mapping module declaring a fixed contract (FINGERPRINT_COLUMNS, HOSPITAL_ID_COLUMN, MONTH_COLUMN, is_totals_row, compute_metrics); detect_format() matches by an exact column-fingerprint subset, never a partial or fuzzy match, so adding a new vendor means adding one module rather than changing the normalizer.",
+      "evidence": "pipeline/mappings/__init__.py#detect_format; pipeline/mappings/epic.py; pipeline/mappings/cerner.py"
+    },
+    {
+      "dimension": "outputs",
+      "value": "The standard monthly metric set produced across all source systems is cash_on_hand, ar_balance, denial_rate_pct, and open_positions -- one row per (hospital, month, metric), verified to be identical in name and value across two different vendor export layouts for the same underlying data.",
+      "evidence": "pipeline/mappings/epic.py#compute_metrics, pipeline/mappings/cerner.py#compute_metrics; pipeline/test_export_normalizer.py#test_epic_and_cerner_exports_produce_the_same_standard_metrics"
+    },
+    {
+      "dimension": "security_context",
+      "value": "Operator-uploaded export data is treated as the management company's private data, not public data like the CMS HCRIS tables -- the two new tables (export_conversions, hospital_monthly_metrics) have RLS enabled with zero policies, which fails closed by this project's own convention, rather than the public-read policy the CMS tables use.",
+      "evidence": "pipeline/schema.sql (export_conversions, hospital_monthly_metrics RLS block)"
+    },
+    {
+      "dimension": "security_context",
+      "value": "The PHI guardrail built for STORY-010 (reject files with patient names, birth dates, or record numbers) applies to this ingestion path too, not only the path it was first built for -- every export is scanned before either new table is touched, and a PHI hit is raised as a distinct condition rather than represented as a normal conversion outcome.",
+      "evidence": "pipeline/export_normalizer.py#run (ingest_file_with_phi_gate call)"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Built under .colaberry's STORY-011 definition (Convert Hospital System Exports to Standard Metrics, REQ-011, release r1) rather than .hospulse's STORY-011 (an unrelated cost-report-co-pilot story, REQ-015, release r4).",
+      "rationale": "This is a third instance of a numbering collision between the portal's plan (.colaberry) and this repo's own local plan (.hospulse) already documented and resolved the same way for STORY-010 and STORY-003. .hospulse's own equivalent of REQ-011 is fulfilled by its STORY-008, which is also not started, so there is no existing local work this collides with.",
+      "evidence": "PROGRESS.md STORY-011 entry; .colaberry/plan.json REQ-011/STORY-011; .hospulse/plan.json STORY-008"
+    },
+    {
+      "statement": "Idempotency is keyed on a SHA-256 hash of the raw export file's bytes (export_conversions.source_file_hash), not the filename, and hospital_monthly_metrics upserts on (provider_ccn, month, metric_name).",
+      "rationale": "A re-uploaded file with a new name is still the same file and must not be reprocessed as new; a corrected file with the same name is a genuinely different file and must be. Content hashing distinguishes the two cases the filename alone cannot.",
+      "evidence": "pipeline/export_normalizer.py#compute_file_hash, #run; verified live: identical content under a different filename returned the first run's outcome with no second export_conversions row"
+    },
+    {
+      "statement": "Reused phi_guardrail.ingest_file_with_phi_gate() from STORY-010 rather than duplicating PHI detection, and let a PHI hit raise PhiRejectedError rather than becoming another ConversionOutcome.status value.",
+      "rationale": "The gate function was already built for exactly this kind of reuse. Folding a PHI rejection into .status would let a caller that only branches on .status mistake a security rejection for a normal, retryable conversion outcome (needs_mapping/failed) -- keeping it a distinct raised condition prevents that by construction.",
+      "evidence": "pipeline/export_normalizer.py#run; verified live: an Epic-shaped export with an added \"Patient Name\" column was rejected before either new table was touched, with a structured audit log line naming the column/category/reason but not the value"
+    },
+    {
+      "statement": "Extracted load_env() out of hcris_import.py and early_warning.py into pipeline/env.py once export_normalizer.py needed the same function.",
+      "rationale": "This project's own composition rule sets three duplicated occurrences as the threshold for lifting shared logic; this was the third file to need an identical implementation.",
+      "evidence": "pipeline/env.py; pipeline/hcris_import.py, pipeline/early_warning.py (now import load_env instead of defining it)"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "Only two source-system mappings exist (Epic, Cerner), and both column layouts are illustrative -- built without a real vendor export sample, since none was available. A real vendor's mapping module would need a real sample to build against, the same way hcris_import.py's worksheet citations were all confirmed against a real downloaded file before being written.",
+      "evidence": "pipeline/mappings/epic.py, pipeline/mappings/cerner.py module docstrings"
+    },
+    {
+      "statement": "No operator-upload path exists yet (STORY-005, not started) -- export_normalizer.run() takes raw file bytes directly as a function argument. There is no upload UI or API endpoint that calls it yet.",
+      "evidence": "pipeline/export_normalizer.py#run docstring"
+    },
+    {
+      "statement": "Month parsing accepts only ISO-shaped values (\"YYYY-MM-DD\" or \"YYYY-MM\"). A vendor export using a different date format (e.g. \"MM/YYYY\") correctly produces a 'failed' outcome rather than being silently misparsed, but is not automatically handled -- a new format would need an explicit addition to _MONTH_FORMATS.",
+      "evidence": "pipeline/export_normalizer.py#_normalize_month; pipeline/test_export_normalizer.py#test_unparseable_month_produces_a_failed_outcome_not_a_crash"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_export_normalizer.py (14 tests: two vendor formats reconciling to identical standard metrics, unknown format and a one-column-short fingerprint both correctly needs_mapping, totals-row dropping without corrupting source_row provenance, a malformed month and a missing per-row column both producing failed rather than a crash, denial rate left None rather than a fake 0%, file-hash determinism, CSV round-tripping, and the PHI audit log line being valid JSON that never carries the flagged value); full pipeline/ suite (76 tests) run clean with no regressions"
+    }
+  ],
+  "measurementEvents": []
+}

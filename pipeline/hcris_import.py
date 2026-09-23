@@ -36,6 +36,8 @@ import duckdb
 import psycopg2
 import psycopg2.extras
 
+from env import load_env
+
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
 DOWNLOAD_URL = "https://downloads.cms.gov/FILES/HCRIS/HOSP10FY{year}.ZIP"
@@ -329,14 +331,6 @@ def dedupe_by_provider_year(results: list[HospitalYear]) -> list[HospitalYear]:
     return list(best_by_key.values())
 
 
-def load_env(path: Path) -> None:
-    if not path.exists():
-        return
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1)
-            os.environ.setdefault(k, v)
 
 
 def _dedupe_by_provider(rows: list[HospitalYear]) -> list[HospitalYear]:

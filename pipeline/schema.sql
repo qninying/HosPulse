@@ -106,3 +106,53 @@ ALTER TABLE early_warning_flags ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "public read" ON early_warning_flags;
 CREATE POLICY "public read" ON early_warning_flags FOR SELECT USING (true);
+
+-- STORY-011: normalize operator-uploaded hospital-system exports (Epic,
+-- Cerner, etc.) into standard monthly metrics. Unlike the public CMS
+-- tables above, this is a management company's own data -- no upload
+-- path exists yet (STORY-005) and no per-company scoping exists yet
+-- (STORY-006), so these two tables get RLS enabled with ZERO policies
+-- on purpose. This project's "Enable automatic RLS" trigger fails
+-- closed for any table with no policies; that's exactly what we want
+-- here until STORY-006 adds real per-management-company policies --
+-- unlike the CMS tables, there is no "public read" default to restore.
+
+-- One row per file processed -- the Trust criterion's audit entry
+-- linking an export to the metrics it produced. Written on every
+-- outcome (ok / needs_mapping / failed), never skipped, so "audit
+-- entry missing for conversion" can't happen by construction.
+CREATE TABLE IF NOT EXISTS export_conversions (
+    id                 bigserial PRIMARY KEY,
+    source_file        text NOT NULL,
+    source_file_hash   text NOT NULL,        -- idempotency key: reprocessing the same file is a no-op
+    source_system      text,                 -- NULL when status = 'needs_mapping' (format was never identified)
+    status             text NOT NULL,        -- 'ok' | 'needs_mapping' | 'failed'
+    metrics_count      int NOT NULL DEFAULT 0,
+    error_message      text,                 -- populated only when status = 'failed'
+    processed_at       timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (source_file_hash)
+);
+
+-- One row per (hospital, month, metric). UNIQUE constraint is what makes
+-- normalization idempotent: re-running on the same export upserts the
+-- same values instead of duplicating rows.
+CREATE TABLE IF NOT EXISTS hospital_monthly_metrics (
+    id              bigserial PRIMARY KEY,
+    provider_ccn    text NOT NULL REFERENCES hospitals(provider_ccn),
+    month           date NOT NULL,            -- first-of-month
+    metric_name     text NOT NULL,
+    metric_value    numeric,
+    source_file     text NOT NULL,
+    source_row      int,                      -- row index within source_file; NULL if not row-derived
+    source_system   text NOT NULL,
+    conversion_id   bigint NOT NULL REFERENCES export_conversions(id),
+    created_at      timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (provider_ccn, month, metric_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_hospital_monthly_metrics_provider ON hospital_monthly_metrics(provider_ccn);
+CREATE INDEX IF NOT EXISTS idx_hospital_monthly_metrics_conversion ON hospital_monthly_metrics(conversion_id);
+
+ALTER TABLE export_conversions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hospital_monthly_metrics ENABLE ROW LEVEL SECURITY;
+-- No policies added: fails closed until STORY-006 scopes access by management company.

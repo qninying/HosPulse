@@ -25,6 +25,8 @@ from pathlib import Path
 import psycopg2
 import psycopg2.extras
 
+from env import load_env
+
 ROOT = Path(__file__).resolve().parent.parent
 
 OPERATING_MARGIN_THRESHOLD_PCT = 0.0
@@ -158,16 +160,6 @@ def _evaluate_days_in_ar_rising(years: list[YearMetrics]) -> CriterionResult:
             "days_in_ar": values,
         },
     )
-
-
-def load_env(path: Path) -> None:
-    if not path.exists():
-        return
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1)
-            os.environ.setdefault(k, v)
 
 
 def fetch_all_hospital_years(database_url: str) -> dict[str, list[YearMetrics]]:
