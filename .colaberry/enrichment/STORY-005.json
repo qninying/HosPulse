@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-005",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T02:44:39Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "systems",
+      "value": "The Next.js frontend does not write to Supabase-backed operator data directly for uploads -- it invokes the existing Python pipeline (pipeline/export_normalizer.py) as a subprocess from a server-side API route, and the DATABASE_URL credential that pipeline needs is read only by that Python process from the repo-root .env, never entering the Node process's environment or the browser bundle.",
+      "evidence": "frontend/src/app/api/upload/route.ts"
+    },
+    {
+      "dimension": "constraints",
+      "value": "The frontend's only Supabase credential is NEXT_PUBLIC_SUPABASE_ANON_KEY, and export_conversions/hospital_monthly_metrics (STORY-011) have RLS enabled with zero policies on purpose -- the anon key cannot read or write either table. Any future frontend feature needing to query these tables directly (not just trigger the Python pipeline) will need either a service-role credential used only server-side, or RLS policies from STORY-006.",
+      "evidence": "frontend/.env.local (NEXT_PUBLIC_SUPABASE_ANON_KEY only); pipeline/schema.sql (RLS blocks with no policies)"
+    },
+    {
+      "dimension": "integrations",
+      "value": "The upload API route returns a real per-outcome HTTP status (200 accepted, 409 duplicate, 422 needs_mapping/phi_rejected/failed, 400 malformed request, 500 unexpected), verified live via curl against the running dev server, not a mocked handler.",
+      "evidence": "frontend/src/app/api/upload/route.ts; frontend/src/lib/exportUpload.ts#httpStatusFor"
+    },
+    {
+      "dimension": "exceptions",
+      "value": "The Python subprocess's stdout can contain more than one JSON line -- the PHI gate's structured audit log line is printed before the CLI's own --json result line -- so a consumer must parse the last line of stdout, not assume it is a single line.",
+      "evidence": "frontend/src/lib/exportUpload.ts#parseNormalizerOutput; frontend/src/lib/exportUpload.test.ts#'uses the last line when the PHI audit log line precedes the result'"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Built the upload feature as a subprocess bridge to the existing pipeline/export_normalizer.py rather than following the story's own suggested approach of writing via supabase-js from Next.js.",
+      "rationale": "The suggested approach could not actually work: the frontend's anon key cannot read or write export_conversions/hospital_monthly_metrics, which have RLS enabled with zero policies by STORY-011's own design. Reusing the already-built, already-tested Python normalizer avoided reimplementing hash-dedup, format detection, and the PHI gate a second time in TypeScript, and needed no new credential. Raised with the user, who deferred to best judgment on the architecture.",
+      "evidence": "frontend/src/app/api/upload/route.ts module docstring; PROGRESS.md STORY-005 entry"
+    },
+    {
+      "statement": "Added is_duplicate to ConversionOutcome and a --json CLI mode to pipeline/export_normalizer.py, extending a previously-shipped file rather than only writing new frontend code.",
+      "rationale": "STORY-011 only needed re-running the same file to leave the correct end state, never needed to report 'this was a repeat' as a distinct outcome. STORY-005's acceptance criteria explicitly require a duplicate message, and the Node bridge needs a stable, parseable contract rather than string-sniffing human-readable CLI text.",
+      "evidence": "pipeline/export_normalizer.py#ConversionOutcome, #_outcome_from_existing; pipeline/test_export_normalizer.py#test_outcome_from_existing_is_flagged_as_duplicate"
+    },
+    {
+      "statement": "Returned a JSON API response with real per-outcome HTTP status codes rather than a redirect-based, JS-free form flow (the pattern STORY-003's search page uses).",
+      "rationale": "A JSON contract is directly verifiable with curl without following a redirect and scraping rendered HTML, and is the more idiomatic pattern for a file-upload interaction than a full-page form submission.",
+      "evidence": "frontend/src/app/api/upload/route.ts; frontend/src/app/upload/page.tsx (client-side fetch)"
+    },
+    {
+      "statement": "Did not implement Supabase Storage for the raw uploaded file.",
+      "rationale": "STORY-005's acceptance criteria test accept/process, duplicate rejection, and hash-based dedup -- not later file retrievability. Adding a storage bucket now would add integration surface (bucket policies, another credential) not required by anything currently being tested.",
+      "evidence": "PROGRESS.md STORY-005 entry, Notes"
+    },
+    {
+      "statement": "Installed @playwright/test and Chromium as a frontend dev dependency to get real browser automation, rather than requesting a new MCP tool, after the user asked how to obtain it once the initial curl-only verification was flagged as a partial substitute.",
+      "rationale": "Playwright is already this project's stated standard for browser E2E work, and it needs no special tool integration -- it runs like any other test command. This closes the earlier browser-automation gap rather than leaving it open.",
+      "evidence": "frontend/playwright.config.ts; frontend/e2e/upload.spec.ts"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "The subprocess bridge assumes the Node process and the Python venv share a filesystem and a working directory relationship (frontend/ one level below the repo root) -- this works for local development but has not been evaluated against a serverless deployment target (e.g. Vercel), where a Python venv is not available to a Node function the same way.",
+      "evidence": "frontend/src/app/api/upload/route.ts#REPO_ROOT, #PYTHON_BIN"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_export_normalizer.py (+2 tests); frontend/src/lib/exportUpload.test.ts (12 tests: every normalizer status parsed correctly, duplicate taking priority over the underlying status, the HTTP status mapping for every outcome, and the multi-line-stdout parsing bug found live); full pipeline/ suite (90 tests) and frontend vitest suite (24 tests) run clean, tsc and eslint clean"
+    },
+    {
+      "kind": "test",
+      "ref": "frontend/e2e/upload.spec.ts (3 real headless-Chromium tests against the actual running app: valid export accepted, identical re-upload shows duplicate, PHI-bearing export rejected); run twice back to back to confirm the suite is genuinely re-runnable, and DB rows confirmed empty by direct query after each run"
+    }
+  ],
+  "measurementEvents": []
+}

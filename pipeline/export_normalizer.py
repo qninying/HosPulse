@@ -23,7 +23,13 @@ other numbering) that a guardrail nothing calls doesn't count. A PHI
 hit raises PhiRejectedError; export_conversions and
 hospital_monthly_metrics are never touched for a rejected file.
 
-Usage: python3 export_normalizer.py <path-to-export.csv>
+STORY-005 (operator upload) invokes this module as a subprocess from a
+Next.js API route rather than reimplementing any of this in TypeScript
+-- `--json` makes the CLI print one machine-readable JSON line instead
+of the human-readable text below, so that bridge doesn't have to
+string-sniff stdout.
+
+Usage: python3 export_normalizer.py [--json] <path-to-export.csv>
 """
 from __future__ import annotations
 
@@ -64,6 +70,7 @@ class ConversionOutcome:
     source_system: str | None
     metric_rows: list[MetricRow] = field(default_factory=list)
     error_message: str | None = None
+    is_duplicate: bool = False  # STORY-005: this exact file was already processed
 
 
 def compute_file_hash(content: bytes) -> str:
@@ -118,6 +125,19 @@ def normalize_rows(columns: list[str], rows: list[dict]) -> ConversionOutcome:
             source_system=mapping.SOURCE_SYSTEM_NAME,
             error_message=f"{type(exc).__name__}: {exc}",
         )
+
+
+def _outcome_from_existing(existing: dict) -> ConversionOutcome:
+    """Pure: builds the outcome for a file whose hash was already
+    processed. is_duplicate=True lets a caller (STORY-005's upload route)
+    report 'duplicate' as a message distinct from a fresh outcome, without
+    re-deriving anything from the stored record."""
+    return ConversionOutcome(
+        status=existing["status"],
+        source_system=existing["source_system"],
+        error_message=existing["error_message"],
+        is_duplicate=True,
+    )
 
 
 def fetch_existing_conversion(source_file_hash: str, database_url: str) -> dict | None:
@@ -260,11 +280,7 @@ def run(content: bytes, source_file: str, database_url: str) -> ConversionOutcom
     source_file_hash = compute_file_hash(content)
     existing = fetch_existing_conversion(source_file_hash, database_url)
     if existing is not None:
-        return ConversionOutcome(
-            status=existing["status"],
-            source_system=existing["source_system"],
-            error_message=existing["error_message"],
-        )
+        return _outcome_from_existing(existing)
 
     columns, rows = parse_csv(content)
     outcomes: list[ConversionOutcome] = []
@@ -288,8 +304,10 @@ def run(content: bytes, source_file: str, database_url: str) -> ConversionOutcom
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("usage: python3 export_normalizer.py <path-to-export.csv>", file=sys.stderr)
+    json_mode = "--json" in sys.argv[1:]
+    positional = [a for a in sys.argv[1:] if a != "--json"]
+    if len(positional) != 1:
+        print("usage: python3 export_normalizer.py [--json] <path-to-export.csv>", file=sys.stderr)
         sys.exit(1)
 
     load_env(ROOT / ".env")
@@ -297,14 +315,29 @@ if __name__ == "__main__":
     if not database_url:
         raise RuntimeError("DATABASE_URL not set -- check .env")
 
-    file_path = Path(sys.argv[1])
+    file_path = Path(positional[0])
     try:
         outcome = run(file_path.read_bytes(), file_path.name, database_url)
     except PhiRejectedError as exc:
-        print(f"rejected: {exc.audit_entry.reason}", file=sys.stderr)
+        if json_mode:
+            print(json.dumps({"status": "phi_rejected", "message": exc.audit_entry.reason}))
+        else:
+            print(f"rejected: {exc.audit_entry.reason}", file=sys.stderr)
         sys.exit(1)
 
-    if outcome.status == "ok":
+    if json_mode:
+        print(json.dumps({
+            "status": outcome.status,
+            "is_duplicate": outcome.is_duplicate,
+            "source_system": outcome.source_system,
+            "metrics_count": len(outcome.metric_rows),
+            "error_message": outcome.error_message,
+        }))
+        sys.exit(0 if outcome.status in ("ok", "needs_mapping") else 1)
+
+    if outcome.is_duplicate:
+        print(f"duplicate: {file_path.name} was already processed (status: {outcome.status})")
+    elif outcome.status == "ok":
         print(f"{outcome.source_system}: {len(outcome.metric_rows)} metrics normalized")
     elif outcome.status == "needs_mapping":
         print(f"needs_mapping: no known source system matched {file_path.name}")

@@ -12,7 +12,13 @@ Run: cd HosPulse && ./.venv/bin/python -m pytest pipeline/test_export_normalizer
 
 import json
 
-from export_normalizer import _log_phi_audit, compute_file_hash, normalize_rows, parse_csv
+from export_normalizer import (
+    _log_phi_audit,
+    _outcome_from_existing,
+    compute_file_hash,
+    normalize_rows,
+    parse_csv,
+)
 from phi_guardrail import scan_file_for_phi
 
 EPIC_COLUMNS = [
@@ -152,6 +158,23 @@ def test_different_content_hashes_differently():
     a = b"col1,col2\n1,2\n"
     b = b"col1,col2\n1,3\n"
     assert compute_file_hash(a) != compute_file_hash(b)
+
+
+# -- STORY-005: an already-processed file must be reported as a
+# duplicate, distinct from a fresh outcome, without touching the DB
+# again -- _outcome_from_existing is the pure piece of that contract.
+
+def test_outcome_from_existing_is_flagged_as_duplicate():
+    existing = {"status": "ok", "source_system": "epic", "error_message": None}
+    outcome = _outcome_from_existing(existing)
+    assert outcome.is_duplicate is True
+    assert outcome.status == "ok"
+    assert outcome.source_system == "epic"
+
+
+def test_a_fresh_outcome_is_never_marked_duplicate():
+    outcome = normalize_rows(EPIC_COLUMNS, [epic_row()])
+    assert outcome.is_duplicate is False
 
 
 def test_parse_csv_round_trips_columns_and_rows():
