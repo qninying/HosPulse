@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-013",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T19:33:35Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "current_workflow",
+      "value": "Unknown export formats are never guessed at. mappings.detect_format() matches an uploaded file's columns against known source-system fingerprints (Epic, Cerner); no match means the file is marked status='needs_mapping' and none of its rows are written to hospital_monthly_metrics.",
+      "evidence": "pipeline/mappings/__init__.py (detect_format), pipeline/export_normalizer.py:104-106 (normalize_rows)"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "Every file processed through the normalizer gets exactly one audit row in export_conversions recording its outcome (ok / needs_mapping / failed), written unconditionally before any metrics table is touched -- an audit entry cannot be skipped by construction, regardless of which branch the file takes.",
+      "evidence": "pipeline/export_normalizer.py persist_conversion() and its call inside _store(), called on every branch of run()"
+    },
+    {
+      "dimension": "constraints",
+      "value": "Requirement-to-story crediting in this repo's .colaberry-numbered plan is not 1:1 with implementation order -- REQ-012's actual behavior was built while implementing STORY-011 (a different story, focused on standard-metric conversion), and STORY-013 existed as an unticked requirement pointing at already-existing code until this review.",
+      "evidence": ".colaberry/progress.json STORY-013 notes; PROGRESS.md's STORY-011 entry documents the same 'needs_mapping' behavior six sessions earlier"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Ticked STORY-013's three acceptance criteria against the existing STORY-011 implementation rather than writing new, separately-named code to satisfy the same behavior a second time.",
+      "rationale": "The literal acceptance criteria (unknown format -> needs_mapping, known format -> processed normally, every outcome logged to the audit trail) are already true of the running system, already tested, and already live-verified against production Supabase. Duplicating the check under a new module would create two sources of truth for the same decision instead of one.",
+      "evidence": "pipeline/export_normalizer.py; pipeline/test_export_normalizer.py"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "No operator-facing UI surfaces a 'needs mapping' file's status back to the uploading operator yet -- the only signal today is the export_conversions row and the upload API's JSON/HTTP response captured at upload time. The failure path 'Operator is not notified of the needs_mapping status' is only partially covered: the immediate upload response does carry it, but there is no follow-up notification (e.g. email) if an operator does not read that response.",
+      "evidence": "frontend/src/app/upload/page.tsx surfaces the immediate API response only; no email/notification path exists for export_conversions rows"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_export_normalizer.py::test_unknown_columns_are_marked_needs_mapping_not_guessed"
+    },
+    {
+      "kind": "test",
+      "ref": "pipeline/test_export_normalizer.py::test_epic_export_missing_one_fingerprint_column_is_needs_mapping"
+    }
+  ],
+  "measurementEvents": []
+}
