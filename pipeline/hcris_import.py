@@ -37,6 +37,7 @@ import psycopg2
 import psycopg2.extras
 
 from env import load_env
+from pipeline_run_log import finish_pipeline_run, start_pipeline_run
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
@@ -110,7 +111,12 @@ def state_for_ccn(ccn: str) -> str | None:
 def download_hcris_zip(fiscal_year: int, dest_dir: Path = RAW_DIR) -> Path:
     """Download HOSP10FY{year}.ZIP, with a timeout and capped retries.
     Idempotent: if the file already exists at the expected path, skip the
-    download and reuse it rather than re-fetching."""
+    download and reuse it rather than re-fetching. Crash-safe resume: the
+    download lands in a .part file first and is only renamed into the
+    final path on success, so a process killed mid-download leaves a
+    stale .part behind that the exists() check above never trusts -- a
+    resumed run re-downloads cleanly instead of treating a partial file
+    as complete."""
     dest_dir.mkdir(parents=True, exist_ok=True)
     zip_path = dest_dir / f"HOSP10FY{fiscal_year}.ZIP"
     if zip_path.exists() and zip_path.stat().st_size > 0:
@@ -428,13 +434,20 @@ def upsert(rows: list[HospitalYear], database_url: str) -> None:
 
 def run(fiscal_year: int) -> list[HospitalYear]:
     load_env(ROOT / ".env")
-    zip_path = download_hcris_zip(fiscal_year)
-    files = extract_source_files(zip_path, fiscal_year)
-    rows = extract_metrics(files, fiscal_year)
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
         raise RuntimeError("DATABASE_URL not set -- check .env")
-    upsert(rows, database_url)
+
+    run_id = start_pipeline_run("hcris_import", database_url, run_key=str(fiscal_year))
+    try:
+        zip_path = download_hcris_zip(fiscal_year)
+        files = extract_source_files(zip_path, fiscal_year)
+        rows = extract_metrics(files, fiscal_year)
+        upsert(rows, database_url)
+    except Exception as exc:
+        finish_pipeline_run(run_id, "failed", database_url, error_message=str(exc))
+        raise
+    finish_pipeline_run(run_id, "succeeded", database_url, rows_affected=len(rows))
     return rows
 
 

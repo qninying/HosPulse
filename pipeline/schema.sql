@@ -401,3 +401,37 @@ CREATE POLICY "company scoped read" ON weekly_briefing_emails
               AND cm.user_id = auth.uid()
         )
     );
+
+-- STORY-009 (REQ-015): execution-state log for the two processes that had
+-- no audit trail of their own runs. export_conversions and
+-- weekly_briefing_emails already serve this purpose for
+-- normalization/upload and email -- one row per unit of work, which is
+-- what the Trust criterion below asks for. hcris_import.py and
+-- early_warning.py only ever wrote their final upserted state
+-- (hospitals/cost_report_years/early_warning_flags), with no separate
+-- record that a run happened, when, or how it ended.
+--
+-- Not an idempotency KEY by itself -- both processes are already safe to
+-- run twice via natural-key upserts on their own data tables (that part
+-- of REQ-015 was true before this table existed). This is the audit
+-- trail on top of that: "Trust: Each process logs its execution state to
+-- prevent duplication."
+CREATE TABLE IF NOT EXISTS pipeline_runs (
+    id             bigserial PRIMARY KEY,
+    process_name   text NOT NULL,                    -- 'hcris_import' | 'early_warning'
+    run_key        text,                              -- e.g. fiscal year for hcris_import; NULL where a run has no natural key
+    status         text NOT NULL DEFAULT 'running',   -- 'running' | 'succeeded' | 'failed'
+    rows_affected  int,
+    error_message  text,                              -- populated only when status = 'failed'
+    started_at     timestamptz NOT NULL DEFAULT now(),
+    completed_at   timestamptz
+);
+
+CREATE INDEX IF NOT EXISTS idx_pipeline_runs_process ON pipeline_runs(process_name, started_at DESC);
+
+ALTER TABLE pipeline_runs ENABLE ROW LEVEL SECURITY;
+-- No read policy, and none is coming: this logs facts about processes,
+-- not about any company's data, so there is no company to scope a read
+-- policy by. Fails closed permanently; read via a direct Postgres
+-- connection (the pipeline's own DATABASE_URL), same as every other
+-- admin-only table in this schema.

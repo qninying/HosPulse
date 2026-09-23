@@ -26,6 +26,7 @@ import psycopg2
 import psycopg2.extras
 
 from env import load_env
+from pipeline_run_log import finish_pipeline_run, start_pipeline_run
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -249,11 +250,17 @@ def run() -> list[FlagEvaluation]:
     if not database_url:
         raise RuntimeError("DATABASE_URL not set -- check .env")
 
-    by_hospital = fetch_all_hospital_years(database_url)
-    evaluations = [
-        evaluate_early_warning_flags(ccn, years) for ccn, years in by_hospital.items()
-    ]
-    upsert_flags(evaluations, database_url)
+    run_id = start_pipeline_run("early_warning", database_url)
+    try:
+        by_hospital = fetch_all_hospital_years(database_url)
+        evaluations = [
+            evaluate_early_warning_flags(ccn, years) for ccn, years in by_hospital.items()
+        ]
+        upsert_flags(evaluations, database_url)
+    except Exception as exc:
+        finish_pipeline_run(run_id, "failed", database_url, error_message=str(exc))
+        raise
+    finish_pipeline_run(run_id, "succeeded", database_url, rows_affected=len(evaluations))
     return evaluations
 
 

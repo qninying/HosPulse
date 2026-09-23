@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1",
+  "projectId": "98d59db3-ec83-4951-bf52-3a1fd18ce5de",
+  "storyId": "STORY-009",
+  "projectTruthBaseRevision": 1,
+  "observedAt": "2026-09-23T23:30:00Z",
+  "sourceCommitSha": null,
+  "factProposals": [
+    {
+      "dimension": "current_workflow",
+      "value": "Every side-effecting process in this system (hcris_import.py, early_warning.py, export_normalizer.py, weekly_briefing_email.py) is already made idempotent via a natural-key UNIQUE constraint plus ON CONFLICT upsert, decided independently within each process's own story rather than deferred to a later 'add idempotency' pass.",
+      "evidence": "pipeline/hcris_import.py (upsert(), ON CONFLICT (provider_ccn, fiscal_year)); pipeline/export_normalizer.py (export_conversions.source_file_hash UNIQUE); pipeline/weekly_briefing_email.py (weekly_briefing_emails UNIQUE (company_id, week_of, recipient_email))"
+    },
+    {
+      "dimension": "systems",
+      "value": "A shared pipeline_runs table and pipeline/pipeline_run_log.py module now give hcris_import.py and early_warning.py an execution-state audit log (process_name, run_key, status, rows_affected, error_message, started_at, completed_at), matching what export_conversions and weekly_briefing_emails already provided at a finer grain for normalization/upload and email.",
+      "evidence": "pipeline/schema.sql (pipeline_runs table); pipeline/pipeline_run_log.py; pipeline/hcris_import.py run(); pipeline/early_warning.py run()"
+    },
+    {
+      "dimension": "current_workflow",
+      "value": "hcris_import.py's download step is crash-safe by construction: it downloads into a .part file and only renames it into the final path on success, so a process killed mid-download leaves a stale .part behind that a resumed run never mistakes for a completed download.",
+      "evidence": "pipeline/hcris_import.py download_hcris_zip(); pipeline/test_hcris_import.py::test_a_stale_partial_download_does_not_block_a_resumed_download"
+    }
+  ],
+  "decisions": [
+    {
+      "statement": "Did not add a pipeline_runs row for export_normalizer.py or weekly_briefing_email.py, even though they are also REQ-015 processes.",
+      "rationale": "Both already write their own per-unit-of-work execution log (export_conversions, one row per file; weekly_briefing_emails, one row per send) at a finer grain than a per-run table would give. Routing them through pipeline_runs too would duplicate that guarantee rather than add a new one.",
+      "evidence": "pipeline/schema.sql (pipeline_runs comment); pipeline/export_normalizer.py persist_conversion(); pipeline/weekly_briefing_email.py reserve_send_slot()"
+    },
+    {
+      "statement": "Verified the download-resume and retry paths with urlretrieve monkeypatched rather than against a real network call.",
+      "rationale": "These are pure control-flow guarantees (does a stale .part block a resume, does the retry loop stop at the cap) that don't need a real HTTP round trip to prove, and this project's own convention keeps real network/DB calls out of the automatic pytest run, verifying those live instead.",
+      "evidence": "pipeline/test_hcris_import.py (4 new tests, no network access)"
+    }
+  ],
+  "limitations": [
+    {
+      "statement": "pipeline_runs is an audit trail, not a lock. Two overlapping invocations of the same process (e.g. a manually triggered run colliding with a scheduled one) are not prevented from both running concurrently; each would upsert the same natural-key rows safely, but pipeline_runs would show two overlapping 'running' rows rather than one being blocked.",
+      "evidence": "pipeline/pipeline_run_log.py (no advisory lock or run-in-progress check)"
+    },
+    {
+      "statement": "A process killed by SIGKILL after start_pipeline_run() but before finish_pipeline_run() leaves that run's row permanently in status='running' -- this is accurate (the run genuinely never completed) but nothing currently surfaces a stuck 'running' row to a human for review.",
+      "evidence": "pipeline/pipeline_run_log.py"
+    }
+  ],
+  "demonstrationEvidence": [
+    {
+      "kind": "test",
+      "ref": "pipeline/test_hcris_import.py::test_a_stale_partial_download_does_not_block_a_resumed_download"
+    },
+    {
+      "kind": "test",
+      "ref": "pipeline/test_hcris_import.py::test_download_retries_on_failure_then_succeeds"
+    },
+    {
+      "kind": "live_run",
+      "ref": "early_warning.py run twice against production Supabase: 274/274 hospitals both times, identical distribution, pipeline_runs rows 1-2 both status='succeeded'"
+    },
+    {
+      "kind": "live_run",
+      "ref": "hcris_import.py --fiscal-year 2025 run twice against production Supabase: 137/137 rows both times, pipeline_runs rows 3-4 both status='succeeded', no row growth in cost_report_years from the repeat run"
+    }
+  ],
+  "measurementEvents": []
+}

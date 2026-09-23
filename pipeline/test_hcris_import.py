@@ -4,14 +4,18 @@ Run: cd HosPulse && ./.venv/bin/python -m pytest pipeline/test_hcris_import.py -
 """
 
 import zipfile
+from pathlib import Path
 
 import pytest
 
+import hcris_import
 from hcris_import import (
+    HcrisDownloadError,
     HcrisFormatError,
     HospitalYear,
     _dedupe_by_provider,
     dedupe_by_provider_year,
+    download_hcris_zip,
     extract_source_files,
     fiscal_year_of,
     state_for_ccn,
@@ -137,3 +141,73 @@ def test_a_well_formed_zip_is_accepted(tmp_path):
 
     files = extract_source_files(good_zip, fiscal_year=2099)
     assert files["rpt"].exists() and files["nmrc"].exists() and files["alpha"].exists()
+
+
+# -- download_hcris_zip: STORY-009's idempotency / interruption-and-resume
+# coverage. Pure filesystem behaviour, no real network call -- urlretrieve
+# is monkeypatched so these run offline and instantly.
+
+
+def test_download_is_skipped_when_the_final_file_already_exists(tmp_path, monkeypatch):
+    """Given a process runs twice, the second run must not re-download a
+    file it already has, not just avoid duplicating it once downloaded."""
+    zip_path = tmp_path / "HOSP10FY2099.ZIP"
+    zip_path.write_bytes(b"already-downloaded-content")
+
+    def fail_if_called(url, path):
+        raise AssertionError("urlretrieve should not be called when the file already exists")
+
+    monkeypatch.setattr(hcris_import, "urlretrieve", fail_if_called)
+    result = download_hcris_zip(2099, dest_dir=tmp_path)
+
+    assert result == zip_path
+    assert result.read_bytes() == b"already-downloaded-content"
+
+
+def test_a_stale_partial_download_does_not_block_a_resumed_download(tmp_path, monkeypatch):
+    """Given a process interruption (killed mid-download), a resumed run
+    completes without duplication. Simulates the crash by leaving a .part
+    file behind that was never renamed into the final path -- the exists()
+    check only trusts the final path, so a resumed run must re-download
+    cleanly rather than mistaking the stale partial for a finished one."""
+    stale_part = (tmp_path / "HOSP10FY2099.ZIP").with_suffix(".part")
+    stale_part.write_bytes(b"incomplete-from-a-crashed-run")
+
+    def fake_urlretrieve(url, path):
+        Path(path).write_bytes(b"complete-zip-content")
+
+    monkeypatch.setattr(hcris_import, "urlretrieve", fake_urlretrieve)
+    result = download_hcris_zip(2099, dest_dir=tmp_path)
+
+    assert result == tmp_path / "HOSP10FY2099.ZIP"
+    assert result.read_bytes() == b"complete-zip-content"
+    assert not stale_part.exists()  # renamed into the final path, not left behind as debris
+
+
+def test_download_retries_on_failure_then_succeeds(tmp_path, monkeypatch):
+    monkeypatch.setattr(hcris_import.time, "sleep", lambda s: None)
+    attempts = []
+
+    def flaky_urlretrieve(url, path):
+        attempts.append(1)
+        if len(attempts) < 2:
+            raise OSError("simulated network failure")
+        Path(path).write_bytes(b"complete-zip-content")
+
+    monkeypatch.setattr(hcris_import, "urlretrieve", flaky_urlretrieve)
+    result = download_hcris_zip(2099, dest_dir=tmp_path)
+
+    assert len(attempts) == 2
+    assert result.read_bytes() == b"complete-zip-content"
+
+
+def test_download_fails_with_clear_error_after_exhausting_retries(tmp_path, monkeypatch):
+    monkeypatch.setattr(hcris_import.time, "sleep", lambda s: None)
+
+    def always_fails(url, path):
+        raise OSError("simulated network failure")
+
+    monkeypatch.setattr(hcris_import, "urlretrieve", always_fails)
+
+    with pytest.raises(HcrisDownloadError):
+        download_hcris_zip(2099, dest_dir=tmp_path)
