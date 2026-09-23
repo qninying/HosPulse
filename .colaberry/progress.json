@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 7,
+    "stories_verified": 8,
     "stories_submitted": 1,
-    "stories_in_progress": 6,
+    "stories_in_progress": 5,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 25,
-    "points_awarded": 2381
+    "criteria_passed": 28,
+    "points_awarded": 2438
   },
   "stories": [
     {
@@ -267,19 +267,15 @@
       "notes": "The story's own suggested approach (Next.js + Supabase storage, writing via supabase-js) could not actually work as suggested: the frontend only has NEXT_PUBLIC_SUPABASE_ANON_KEY, and export_conversions/hospital_monthly_metrics (STORY-011) have RLS enabled with zero policies on purpose, so the anon key cannot read or write them. Raised with the user, who deferred to best judgment; built instead as a subprocess bridge: the Next.js API route (frontend/src/app/api/upload/route.ts) saves the uploaded file to a temp path and invokes the already-built, already-tested pipeline/export_normalizer.py (STORY-011) via child_process, rather than reimplementing hash-dedup, format detection, or the PHI gate in TypeScript. DATABASE_URL is read only by the Python subprocess from the repo-root .env -- never touches the Node process's environment or the browser bundle, so no new secret was needed. Extended export_normalizer.py for what STORY-005 genuinely needs that STORY-011 didn't: an is_duplicate flag on ConversionOutcome (STORY-011 only needed the end state to be correct on a re-run, never needed to report 'this was a repeat' as a distinct, user-facing outcome) and a --json CLI mode emitting one stable, parseable result line instead of human-readable text, so the Node bridge doesn't have to string-sniff output. Chose a JSON API response (with a real HTTP status per outcome: 200 ok, 409 duplicate, 422 needs_mapping/phi_rejected/failed, 400 malformed request, 500 unexpected) over a redirect-based no-JS form flow, since it's directly verifiable with curl and is the more idiomatic pattern for a file-upload interaction than the plain GET-search form STORY-003 used. Found two real bugs via live testing (Build-Break-Harden, not just the happy path): (1) the PHI gate's audit log line prints to stdout before the CLI's own --json result line, so a naive 'stdout is one JSON line' assumption would have broken the very first time a file was scanned -- fixed by having the parser take the last line, not assume a single line, and wrote a test locking this in; (2) request.formData() itself throws on an empty/malformed body, before any of the route's own file-presence validation runs, which surfaced live as an unhandled 500 with no body instead of a clean 400 -- fixed by wrapping the parse itself in a try/catch. Verified live end to end through the real running dev server (curl against the actual route, not a mocked handler): a fresh valid export returned 200 with 4 metrics normalized; the identical file re-uploaded returned 409 duplicate with zero new rows in export_conversions (confirmed by direct query, not just trusting the HTTP response); an unrecognized format returned 422 needs_mapping; a PHI-bearing export returned 422 with zero rows in either table; and the empty-body case returned a clean 400 after the fix. All live test rows and temp files cleaned up afterward. Did not build Supabase Storage for the raw file -- the acceptance criteria test accept/process/duplicate-rejection/hash-dedup, not file retrievability, and adding a storage bucket now would add integration surface (bucket policies, another credential) nothing here actually requires yet. Browser-based verification of the /upload page's client-side fetch flow was not possible in this environment (no browser automation tool available); verified the page renders correctly via direct HTTP fetch of its HTML and verified the exact API endpoint its fetch() call hits via curl instead -- a real but partial substitute for true in-browser testing, noted here rather than presented as full coverage. Follow-up: the user asked how to get real browser automation, since none was available in-session for the original verification. Installed @playwright/test and Chromium as a frontend dev dependency (matching this project's own stated standard for browser E2E work) rather than requiring a new MCP tool -- Playwright itself is the automation, run like any other test command. This resolves the 'no browser automation tool available' limitation noted above: the /upload page's actual client-side fetch flow is now driven by a real headless Chromium browser, not verified by curl-testing the endpoint separately. playwright.config.ts uses reuseExistingServer so it attaches to an already-running dev server instead of conflicting with one (found live: another dev server for this same repo was already running on port 3000 from an earlier session).",
       "updated_at": "2026-09-23T02:44:39Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": 191,
-        "outstanding": [
-          "Given a valid export file, When uploaded, Then the system accepts and processes the file.",
-          "Given a duplicate file, When uploaded, Then the system rejects it with a duplicate message.",
-          "Trust: Each upload is checked for duplicates by file hash."
-        ]
+        "verified_at": "2026-09-23T02:51:22.130Z",
+        "commit_sha": "46fb062a074ded9a3afc19a175a6b11392e4d143",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/46fb062a074ded9a3afc19a175a6b11392e4d143",
+        "commit_at": "2026-09-23T02:49:43Z",
+        "points_awarded": 248,
+        "outstanding": []
       }
     },
     {
