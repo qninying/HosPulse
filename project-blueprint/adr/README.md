@@ -21,3 +21,4 @@ Status is one of `Accepted`, `Proposed`, or `Superseded by ADR-NNN`.
 | [011](ADR-011-dual-numbering-reconciliation.md) | Reconcile dual story-numbering by auditing overlap, not rebuilding | Accepted |
 | [012](ADR-012-live-verification-over-mocks.md) | Live verification over mocks for I/O-touching code | Accepted |
 | [013](ADR-013-deploy-to-vercel-fulfill-req018.md) | Deploy to Vercel to fulfill REQ-018 | Accepted |
+| [014](ADR-014-supabase-storage-service-role.md) | Supabase Storage via a service_role key, not the anon key | Accepted |

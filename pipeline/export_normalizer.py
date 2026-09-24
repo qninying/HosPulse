@@ -20,8 +20,16 @@ scope) via phi_guardrail.ingest_file_with_phi_gate() -- reused rather
 than rebuilt, since it was already built for exactly this reuse and
 this repo already learned once (this same STORY-011, in the portal's
 other numbering) that a guardrail nothing calls doesn't count. A PHI
-hit raises PhiRejectedError; export_conversions and
-hospital_monthly_metrics are never touched for a rejected file.
+hit raises PhiRejectedError; export_conversions, hospital_monthly_metrics,
+and Supabase Storage are never touched for a rejected file.
+
+REQ-017: the raw file bytes are archived to Supabase Storage (see
+supabase_storage.py) for every outcome that passed the PHI gate -- ok,
+needs_mapping, or failed alike, so a needs_mapping file can be
+reprocessed later without asking the operator to re-upload. A Storage
+failure never fails the conversion itself: storage_path stays NULL,
+honestly meaning "not archived," and the metrics (the primary,
+already-proven value) still save regardless.
 
 STORY-005 (operator upload) invokes this module as a subprocess from a
 Next.js API route rather than reimplementing any of this in TypeScript
@@ -49,6 +57,7 @@ import psycopg2.extras
 from env import load_env
 from mappings import detect_format
 from phi_guardrail import PhiAuditEntry, PhiRejectedError, ingest_file_with_phi_gate
+from supabase_storage import upload_export_file
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -175,11 +184,17 @@ def _provider_ccn_for(outcome: ConversionOutcome) -> str | None:
 
 
 def persist_conversion(
-    outcome: ConversionOutcome, source_file: str, source_file_hash: str, database_url: str
+    outcome: ConversionOutcome,
+    source_file: str,
+    source_file_hash: str,
+    database_url: str,
+    storage_path: str | None = None,
 ) -> int:
     """Writes the single audit row for this conversion attempt. Not
     idempotent on its own -- callers must check fetch_existing_conversion()
-    first, which run() does."""
+    first, which run() does. storage_path is NULL when the file wasn't
+    archived (no attempt, or a Storage failure) -- honest, not a gap to
+    paper over, per REQ-017's failure-handling decision."""
     conn = psycopg2.connect(database_url, connect_timeout=10)
     try:
         with conn, conn.cursor() as cur:
@@ -187,8 +202,8 @@ def persist_conversion(
                 """
                 INSERT INTO export_conversions (
                     source_file, source_file_hash, source_system, status,
-                    metrics_count, error_message, provider_ccn
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    metrics_count, error_message, provider_ccn, storage_path
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
                 """,
                 (
@@ -199,6 +214,7 @@ def persist_conversion(
                     len(outcome.metric_rows),
                     outcome.error_message,
                     _provider_ccn_for(outcome),
+                    storage_path,
                 ),
             )
             return cur.fetchone()[0]
@@ -274,6 +290,20 @@ def _log_phi_audit(entry: PhiAuditEntry, source_file: str) -> None:
     }))
 
 
+def _archive_to_storage(content: bytes, source_file_hash: str) -> str | None:
+    """REQ-017: best-effort archive of the raw file to Supabase Storage.
+    Missing credentials are treated the same as any other Storage failure
+    -- storage_path stays NULL, nothing raises -- so this feature degrades
+    gracefully if the one-time bucket/key setup hasn't happened yet,
+    rather than blocking the metrics extraction that already works."""
+    supabase_url = os.environ.get("SUPABASE_URL")
+    service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if not supabase_url or not service_role_key:
+        print("warn: SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY not set -- skipping Storage archive")
+        return None
+    return upload_export_file(content, source_file_hash, supabase_url, service_role_key)
+
+
 def run(content: bytes, source_file: str, database_url: str) -> ConversionOutcome:
     """Idempotent entry point. The same file content processed twice
     returns the first run's outcome and touches neither table a second
@@ -299,7 +329,10 @@ def run(content: bytes, source_file: str, database_url: str) -> ConversionOutcom
 
     def _store(clean_rows: list[dict]) -> None:
         outcome = normalize_rows(columns, clean_rows)
-        conversion_id = persist_conversion(outcome, source_file, source_file_hash, database_url)
+        storage_path = _archive_to_storage(content, source_file_hash)
+        conversion_id = persist_conversion(
+            outcome, source_file, source_file_hash, database_url, storage_path=storage_path
+        )
         if outcome.status == "ok":
             upsert_metrics(
                 outcome.metric_rows, source_file, outcome.source_system, conversion_id, database_url

@@ -183,7 +183,9 @@
         "outputs"
       ],
       "fulfilled_by": [
-        "STORY-002"
+        "STORY-001",
+        "STORY-002",
+        "STORY-011"
       ]
     },
     {
@@ -237,7 +239,7 @@
       "from_dimensions": [
         "systems"
       ],
-      "fulfilled_by": []
+      "fulfilled_by": ["STORY-001", "STORY-006"]
     },
     {
       "id": "REQ-018",

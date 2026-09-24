@@ -188,9 +188,14 @@ CREATE TABLE IF NOT EXISTS export_conversions (
     status             text NOT NULL,        -- 'ok' | 'needs_mapping' | 'failed'
     metrics_count      int NOT NULL DEFAULT 0,
     error_message      text,                 -- populated only when status = 'failed'
+    storage_path       text,                 -- REQ-017: path in the hospital-exports Supabase Storage bucket; NULL means genuinely not archived (no attempt, or a Storage failure), never faked
     processed_at       timestamptz NOT NULL DEFAULT now(),
     UNIQUE (source_file_hash)
 );
+
+-- Migration for a table that may already exist from before this column
+-- was added (idempotent: a no-op if it's already there).
+ALTER TABLE export_conversions ADD COLUMN IF NOT EXISTS storage_path text;
 
 -- One row per (hospital, month, metric). UNIQUE constraint is what makes
 -- normalization idempotent: re-running on the same export upserts the

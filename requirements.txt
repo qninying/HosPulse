@@ -3,3 +3,4 @@ duckdb
 python-dotenv
 anthropic
 resend
+requests
