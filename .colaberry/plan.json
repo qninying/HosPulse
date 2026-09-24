@@ -248,7 +248,7 @@
       "from_dimensions": [
         "systems"
       ],
-      "fulfilled_by": []
+      "fulfilled_by": ["STORY-007"]
     },
     {
       "id": "REQ-019",

@@ -20,4 +20,4 @@ Status is one of `Accepted`, `Proposed`, or `Superseded by ADR-NNN`.
 | [010](ADR-010-no-fabricated-values.md) | No value that could be mistaken for real | Accepted |
 | [011](ADR-011-dual-numbering-reconciliation.md) | Reconcile dual story-numbering by auditing overlap, not rebuilding | Accepted |
 | [012](ADR-012-live-verification-over-mocks.md) | Live verification over mocks for I/O-touching code | Accepted |
-| [013](ADR-013-deploy-to-vercel-fulfill-req018.md) | Deploy to Vercel to fulfill REQ-018 | Proposed |
+| [013](ADR-013-deploy-to-vercel-fulfill-req018.md) | Deploy to Vercel to fulfill REQ-018 | Accepted |
