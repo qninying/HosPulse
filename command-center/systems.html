@@ -32,7 +32,7 @@
   </header>
   <main>
     <h1 class="cc-page-title">Systems</h1>
-    <p class="cc-page-desc">What HosPulse connects to. The plan only knows the names. Whether a connection is live is a fact about the running system, so real mode shows every indicator grey.</p>
+    <p class="cc-page-desc">What HosPulse connects to. Supabase and Vercel get a real, live, credential-safe check on page load (Supabase via its public anon key, already shipped in the deployed frontend's own JS bundle; Vercel by fetching the real deployed URL). The Anthropic API and Resend can't be checked from a public static page without exposing a secret key, so those stay honestly grey rather than a green dot nobody can back up.</p>
     <div id="cc-content">Loading…</div>
   </main>
   <script src="assets/command-center.js"></script>
@@ -40,22 +40,91 @@
   (function () {
     const { esc, getParam, sampleBadge } = CommandCenter;
 
-    // Sample overlay only. Real mode is always grey, "not checked from here".
+    // Sample overlay only. Real mode runs genuine checks for the two systems
+    // that can be safely checked from a public static page (see LIVE_CHECKS
+    // below); the rest stay honestly grey.
     const SAMPLE_STATUS = {
-      "CMS HCRIS": { cls: "cc-dot-ok", label: "last import succeeded", checked: "3 days ago" },
       "Supabase": { cls: "cc-dot-ok", label: "connected", checked: "2 minutes ago" },
+      "Postgres": { cls: "cc-dot-ok", label: "connected", checked: "2 minutes ago" },
       "Vercel": { cls: "cc-dot-ok", label: "deployed", checked: "1 hour ago" },
-      "Anthropic Claude API": { cls: "cc-dot-ok", label: "responding", checked: "2 minutes ago" },
+      "Next.js": { cls: "cc-dot-ok", label: "deployed", checked: "1 hour ago" },
+      "API": { cls: "cc-dot-ok", label: "responding", checked: "2 minutes ago" },
       "Resend": { cls: "cc-dot-error", label: "error: rate limited", checked: "20 minutes ago" },
     };
 
-    function status(name, mode) {
-      if (mode !== "sample") return { cls: "", label: "not checked from here", checked: "never" };
-      return SAMPLE_STATUS[name] || { cls: "", label: "not checked from here", checked: "never" };
+    // Both values below are the PUBLIC anon/publishable key and project URL --
+    // the same ones already shipped in the deployed frontend's own JS bundle
+    // (visible to anyone via browser devtools at the production URL), never a
+    // secret. This is what makes a real Supabase check safe from a public,
+    // credential-free static page; the service_role key and DATABASE_URL are
+    // never referenced here or anywhere else outside pipeline/.env.
+    const SUPABASE_URL = "https://xlqavmddypdsumiadefl.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_0zA7CDFVcPFZZ7VqAHfrag_sfDTI-Yp";
+    const VERCEL_URL = "https://hos-pulse.vercel.app/";
+    const LIVE_CHECK_TIMEOUT_MS = 6000;
+
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+      ]);
+    }
+
+    // Supabase's PostgREST layer sits directly in front of Postgres -- a
+    // successful response here is a genuine, live proof both are up, not an
+    // assumption. Reads the public `hospitals` table (RLS already allows
+    // public SELECT on it), same table the public Health Snapshot page reads.
+    async function checkSupabase() {
+      try {
+        const res = await withTimeout(
+          fetch(`${SUPABASE_URL}/rest/v1/hospitals?select=provider_ccn&limit=1`, {
+            headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+          }),
+          LIVE_CHECK_TIMEOUT_MS
+        );
+        return res.ok
+          ? { cls: "cc-dot-ok", label: "connected", checked: "just now" }
+          : { cls: "cc-dot-error", label: `error: HTTP ${res.status}`, checked: "just now" };
+      } catch (e) {
+        return { cls: "cc-dot-error", label: "unreachable", checked: "just now" };
+      }
+    }
+
+    // A real deployed Next.js app IS what's running at this URL -- fetching
+    // it live is a genuine proof of both Vercel hosting and Next.js at once.
+    // mode:"no-cors" means the response is opaque (status unreadable), but
+    // the fetch promise itself still rejects on a real network failure and
+    // resolves on a reachable host, which is exactly the signal needed here.
+    async function checkVercel() {
+      try {
+        await withTimeout(fetch(VERCEL_URL, { mode: "no-cors", cache: "no-store" }), LIVE_CHECK_TIMEOUT_MS);
+        return { cls: "cc-dot-ok", label: "reachable", checked: "just now" };
+      } catch (e) {
+        return { cls: "cc-dot-error", label: "unreachable", checked: "just now" };
+      }
+    }
+
+    // Genuinely cannot be checked here: no public, unauthenticated endpoint
+    // exists for either that wouldn't require exposing a real secret key
+    // from a public page. Grey is the honest answer, not a missing feature.
+    const NOT_CHECKABLE = new Set(["API", "Resend"]);
+    const LIVE_CHECKS = { Supabase: checkSupabase, Postgres: checkSupabase, Vercel: checkVercel, "Next.js": checkVercel };
+
+    function staticStatus(name, mode) {
+      if (mode === "sample") return SAMPLE_STATUS[name] || { cls: "", label: "not checked from here", checked: "never" };
+      if (NOT_CHECKABLE.has(name)) return { cls: "", label: "not checked from here", checked: "never" };
+      return { cls: "", label: "checking…", checked: "now" };
     }
 
     function constraintFor(plan, name) {
       return (plan.requirements || []).find((r) => r.kind === "CONSTRAINT" && (r.systems || []).includes(name));
+    }
+
+    function applyStatus(el, s) {
+      const dot = el.querySelector(".cc-dot");
+      const text = el.querySelector("[data-status-text]");
+      if (dot) dot.className = `cc-dot ${s.cls}`;
+      if (text) text.textContent = `${s.label} · checked ${s.checked}`;
     }
 
     function renderList({ plan, mode }) {
@@ -66,11 +135,20 @@
         return;
       }
       el.innerHTML = `<div class="cc-grid">` + systems.map((sys) => {
-        const s = status(sys, mode);
-        return `<a class="cc-card" href="systems.html?id=${encodeURIComponent(sys)}">
+        const s = staticStatus(sys, mode);
+        return `<a class="cc-card" href="systems.html?id=${encodeURIComponent(sys)}" data-sys="${esc(sys)}">
           <h3><span class="cc-dot ${s.cls}"></span>${esc(sys)}${sampleBadge()}</h3>
-          <p>${esc(s.label)} · checked ${esc(s.checked)}</p></a>`;
+          <p data-status-text>${esc(s.label)} · checked ${esc(s.checked)}</p></a>`;
       }).join("") + `</div>`;
+
+      if (mode !== "sample") {
+        systems.forEach((sys) => {
+          const check = LIVE_CHECKS[sys];
+          if (!check) return;
+          const card = el.querySelector(`[data-sys="${CSS.escape(sys)}"]`);
+          check().then((s) => card && applyStatus(card, s));
+        });
+      }
     }
 
     function renderDetail({ plan, mode }, id) {
@@ -80,18 +158,23 @@
         el.innerHTML = `<p class="cc-back"><a href="systems.html">&larr; Systems</a></p><div class="cc-empty-state">No system "${esc(id)}" in the plan.</div>`;
         return;
       }
-      const s = status(id, mode);
+      const s = staticStatus(id, mode);
       const req = constraintFor(plan, id);
+      const checkable = mode !== "sample" && LIVE_CHECKS[id];
       el.innerHTML = `
         <p class="cc-back"><a href="systems.html">&larr; Systems</a></p>
-        <div class="cc-panel-box">
+        <div class="cc-panel-box" data-sys="${esc(id)}">
           <h3 style="margin-top:0;"><span class="cc-dot ${s.cls}"></span>${esc(id)}${sampleBadge()}</h3>
-          <p><strong>Status:</strong> ${esc(s.label)}</p>
-          <p><strong>Last checked:</strong> ${esc(s.checked)}</p>
+          <p data-status-text><strong>Status:</strong> ${esc(s.label)} · checked ${esc(s.checked)}</p>
           ${req ? `<p style="font-size:13px;"><strong>Named by:</strong> <a href="knowledge-base.html#${esc(req.id)}">${esc(req.id)}</a>: ${esc(req.statement)}</p>` : ""}
-          <p style="color:var(--cc-muted); font-size:13px;">This page only knows the system was named in the plan. A green dot here before the system reports a real check would be a claim nobody made.</p>
+          <p style="color:var(--cc-muted); font-size:13px;">${checkable
+            ? "This dot reflects a real check made from your browser just now (Supabase's public anon key / a direct fetch of the live deployed URL), not a value read from a JSON file."
+            : "No public, credential-free way exists to check this system live from a static page -- a green dot here would be a claim nobody made."}</p>
         </div>
       `;
+      if (checkable) {
+        LIVE_CHECKS[id]().then((live) => applyStatus(el.querySelector(`[data-sys="${CSS.escape(id)}"]`), live));
+      }
     }
 
     CommandCenter.init("systems", (data) => {

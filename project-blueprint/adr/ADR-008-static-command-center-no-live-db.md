@@ -1,6 +1,6 @@
 # ADR-008: Static Command Center, no live DB connection
 
-**Status:** Accepted
+**Status:** Accepted (refined — see "Later refinement" below; the core decision holds)
 
 ## Context
 
@@ -28,3 +28,21 @@ credentialed connection from a public static page.
 - Real production facts (an agent's run count, a story's verification state) can go stale between
   syncs. Accepted, since the alternative (a live credentialed connection from a public page) is a
   materially worse trade.
+
+## Later refinement: the Systems tab does make live calls, deliberately
+
+This decision's "zero live calls" needed one narrow, explicit carve-out. The Systems tab now
+performs real, live reachability checks for **Supabase and Vercel** on page load — a direct
+`fetch()` to Supabase's PostgREST endpoint (reading the already-public `hospitals` table) and to
+the real deployed Vercel URL. This does not weaken the original decision, because neither call
+uses a credential this repo needs to protect: the Supabase anon/publishable key is *designed* to
+be public and is already shipped, unencrypted, inside the deployed frontend's own JS bundle —
+embedding the same key in the Command Center's JS exposes nothing that isn't already exposed. The
+Vercel check needs no credential at all, just a public URL.
+
+The Anthropic API and Resend have no equivalent safe check — no public, unauthenticated endpoint
+exists for either that wouldn't require embedding a real secret key in a public static page — so
+those two stay exactly as this ADR originally specified: grey, "not checked from here," honestly.
+The rule this ADR actually protects isn't "never fetch anything," it's "never expose a secret
+from a public page or claim a check that didn't happen" — the Systems tab's live checks satisfy
+that rule exactly as strictly as the rest of this decision always has.
