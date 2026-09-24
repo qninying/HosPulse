@@ -259,7 +259,7 @@
       "from_dimensions": [
         "systems"
       ],
-      "fulfilled_by": []
+      "fulfilled_by": ["STORY-008"]
     },
     {
       "id": "REQ-020",
@@ -270,7 +270,7 @@
       "from_dimensions": [
         "systems"
       ],
-      "fulfilled_by": []
+      "fulfilled_by": ["STORY-001", "STORY-003"]
     }
   ],
   "releases": [
