@@ -1,0 +1,349 @@
+/* STORY-009: dashboard-only styles, scoped by import (only dashboard/layout.tsx
+   pulls this in) so the public Health Snapshot and upload pages are untouched.
+   Tokens match the Command Center's own palette for a consistent brand. */
+
+:root {
+  --dc-accent: #13a39a;
+  --dc-accent-soft: #e3f5f3;
+  --dc-critical: #c8423b;
+  --dc-critical-soft: #fbe9e7;
+  --dc-warning: #c98a12;
+  --dc-warning-soft: #fcf3dd;
+  --dc-ok: #2f8f5b;
+  --dc-ok-soft: #e5f4eb;
+  --dc-neutral: #5f6d7c;
+  --dc-neutral-soft: #eef1f4;
+  --dc-border: #e2e7ed;
+  --dc-panel: #ffffff;
+  --dc-bg: #f4f6f9;
+  --dc-ink: #1c2733;
+  --dc-muted: #5f6d7c;
+  --dc-radius: 10px;
+  --dc-radius-lg: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --dc-accent: #2bc0b6;
+    --dc-accent-soft: #133a40;
+    --dc-border: #2a3542;
+    --dc-panel: #16202b;
+    --dc-bg: #0f1620;
+    --dc-ink: #e7ecf1;
+    --dc-muted: #93a2b1;
+    --dc-neutral-soft: #202b37;
+  }
+}
+
+:root[data-theme="dark"] {
+  --dc-accent: #2bc0b6;
+  --dc-accent-soft: #133a40;
+  --dc-border: #2a3542;
+  --dc-panel: #16202b;
+  --dc-bg: #0f1620;
+  --dc-ink: #e7ecf1;
+  --dc-muted: #93a2b1;
+  --dc-neutral-soft: #202b37;
+}
+
+.dc-dashboard {
+  background: var(--dc-bg);
+  color: var(--dc-ink);
+  padding: 24px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dc-titlebar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dc-titlebar h1 {
+  font-size: 24px;
+  margin-bottom: 2px;
+}
+
+.dc-muted {
+  color: var(--dc-muted);
+}
+
+.dc-small {
+  font-size: 13px;
+}
+
+.dc-timestamp {
+  font-size: 12px;
+  color: var(--dc-muted);
+  margin-top: 8px;
+}
+
+/* Cards */
+
+.dc-card {
+  background: var(--dc-panel);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius-lg);
+  display: block;
+  color: inherit;
+}
+
+.dc-card-head {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--dc-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.dc-card-head h3 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.dc-card-body {
+  padding: 16px 18px;
+}
+
+/* KPI row */
+
+.dc-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.dc-kpi-card {
+  background: var(--dc-panel);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  padding: 14px 16px;
+  display: block;
+}
+
+.dc-kpi-card-link:hover {
+  border-color: var(--dc-accent);
+}
+
+.dc-kpi-label {
+  font-size: 12px;
+  color: var(--dc-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.dc-kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.dc-kpi-context {
+  font-size: 12px;
+  color: var(--dc-muted);
+  margin-top: 2px;
+}
+
+.dc-tone-critical { color: var(--dc-critical); }
+.dc-tone-warning { color: var(--dc-warning); }
+.dc-tone-ok { color: var(--dc-ok); }
+.dc-tone-no_data { color: var(--dc-neutral); }
+.dc-tone-neutral { color: var(--dc-ink); }
+
+/* Two-panel grid (briefing + trend) */
+
+.dc-grid-2 {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 18px;
+}
+
+/* Status pills */
+
+.dc-pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.dc-pill-critical { background: var(--dc-critical-soft); color: var(--dc-critical); }
+.dc-pill-warning { background: var(--dc-warning-soft); color: var(--dc-warning); }
+.dc-pill-ok { background: var(--dc-ok-soft); color: var(--dc-ok); }
+.dc-pill-no_data { background: var(--dc-neutral-soft); color: var(--dc-neutral); }
+
+/* Hospital status grid */
+
+.dc-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.dc-status-card {
+  transition: border-color 0.12s ease;
+}
+
+.dc-status-card:hover {
+  border-color: var(--dc-accent);
+}
+
+.dc-status-card-critical { border-left: 3px solid var(--dc-critical); }
+.dc-status-card-warning { border-left: 3px solid var(--dc-warning); }
+.dc-status-card-ok { border-left: 3px solid var(--dc-ok); }
+.dc-status-card-no_data { border-left: 3px solid var(--dc-border); }
+
+.dc-status-primary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.dc-status-supporting {
+  list-style: none;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+/* Trend panel */
+
+.dc-trend-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dc-trend-series-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--dc-muted);
+}
+
+.dc-trend-values {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.dc-trend-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Chips */
+
+.dc-chip {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--dc-border);
+  color: var(--dc-ink);
+}
+
+.dc-chip:hover {
+  border-color: var(--dc-accent);
+}
+
+.dc-chip-active {
+  background: var(--dc-accent-soft);
+  border-color: var(--dc-accent);
+  color: var(--dc-accent);
+  font-weight: 600;
+}
+
+.dc-chip-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.dc-brief-body {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+/* Findings */
+
+.dc-findings-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dc-findings-list details {
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  padding: 10px 12px;
+}
+
+.dc-findings-list summary {
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.dc-findings-list p {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+/* Criteria detail */
+
+.dc-criteria-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dc-criteria-list details {
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  padding: 10px 12px;
+}
+
+.dc-criteria-list pre {
+  font-size: 12px;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  color: var(--dc-muted);
+}
+
+/* Loading skeleton */
+
+.dc-skeleton {
+  background: var(--dc-neutral-soft);
+  border-radius: var(--dc-radius);
+  animation: dc-pulse 1.4s ease-in-out infinite;
+}
+
+.dc-skeleton-title { height: 28px; width: 240px; }
+.dc-skeleton-kpi { height: 78px; }
+.dc-skeleton-panel { height: 220px; }
+
+@keyframes dc-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@media (max-width: 900px) {
+  .dc-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .dc-grid-2 { grid-template-columns: 1fr; }
+  .dc-dashboard { padding: 16px; }
+}

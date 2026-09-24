@@ -3,11 +3,18 @@
   --foreground: #171717;
 }
 
+/* Manual toggle (see ThemeToggle) takes priority when set; otherwise follow
+   the OS. Matches the exact cascade the Command Center already uses. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+}
+
+:root[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 html {
@@ -26,9 +33,47 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 32px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  flex-wrap: wrap;
+}
+
+.site-brand {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.site-nav {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+}
+
+.site-user {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-user form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+main {
+  padding: 24px 32px;
 }
 
 * {
@@ -43,7 +88,27 @@ a {
 }
 
 @media (prefers-color-scheme: dark) {
-  html {
+  html:not([data-theme="light"]) {
     color-scheme: dark;
   }
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+.theme-toggle {
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  background: transparent;
+  color: inherit;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: currentColor;
 }

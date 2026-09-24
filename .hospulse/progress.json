@@ -415,21 +415,46 @@
         },
         {
           "text": "Given a flagged hospital, When the operator opens it, Then the flag, the rule and the triggering numbers are shown.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a hospital with no uploads yet, When the dashboard loads, Then it shows 'no data yet' rather than a stable status.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Status colors come only from engine flags, never from the page's own calculations.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "frontend/src/lib/supabaseServerClient.ts",
+        "frontend/src/middleware.ts",
+        "frontend/src/app/login/page.tsx",
+        "frontend/src/app/login/actions.ts",
+        "frontend/src/app/auth/callback/route.ts",
+        "frontend/src/app/logout/route.ts",
+        "frontend/src/lib/currentCompany.ts",
+        "frontend/src/lib/companyHospitals.ts",
+        "frontend/src/lib/companyBriefing.ts",
+        "frontend/src/lib/costReportFindings.ts",
+        "frontend/src/components/dashboard/*.tsx",
+        "frontend/src/components/SiteHeader.tsx",
+        "frontend/src/app/dashboard/page.tsx",
+        "frontend/src/app/dashboard/[ccn]/page.tsx",
+        "frontend/src/app/dashboard/loading.tsx",
+        "frontend/src/app/dashboard/layout.tsx",
+        "frontend/src/app/dashboard/dashboard.css",
+        "frontend/src/app/layout.tsx",
+        "frontend/src/app/globals.css",
+        "frontend/package.json",
+        "pipeline/reconcile_company_members.py"
+      ],
+      "tests_added": [
+        "existing frontend/e2e/upload.spec.ts (3 tests, re-run unmodified to confirm zero regression from the new SiteHeader/layout)",
+        "existing frontend vitest suite (24 tests, unaffected)"
+      ],
+      "notes": "Built the first auth code this codebase has ever had: real Supabase magic-link (passwordless) sign-in via a new @supabase/ssr-based request-scoped server client (frontend/src/lib/supabaseServerClient.ts, distinct from the existing anon-only singleton) and middleware.ts gating only /dashboard/*. This was a hard prerequisite, not scope creep: a per-company dashboard has no honest way to know which company is viewing it without a real session, given company_members' RLS policy is keyed on auth.uid(). The hand-seeded test company_members row (a random UUID, never a real auth.users row) was reconciled to the real auth.users.id created at first sign-in via a new idempotent script, pipeline/reconcile_company_members.py, matched on the existing company_members.email column -- confirmed live: one real row changed on first run, zero on the second. Criterion 1 is left honestly unticked, same precedent as STORY-002/`.hospulse` STORY-008: it names 'days cash, days in A/R, margin and a 12-week trend' which implies real MONTHLY ledger data, and hospital_monthly_metrics is genuinely empty (no operator has uploaded a real export yet) -- the dashboard instead shows real ANNUAL cost-report trends (reusing frontend/src/lib/hospitalDetail.ts's existing getHospitalTrends() as-is) and correctly renders 'No data yet' rather than fabricating a monthly/12-week trend the data can't support. Criteria 2-4 are genuinely true and live-verified. Design brief from the user (KPI row, status cards, progressive disclosure, restrained enterprise styling matching the Command Center's font/accent) was translated onto HosPulse's real data rather than copied literally -- no charting library added (a hand-rolled inline SVG sparkline, same technique already in project-blueprint/mockup.html), no Tailwind/component library added, plain CSS extending the existing convention.",
+      "updated_at": "2026-09-24T02:00:00Z",
       "verification": {
         "state": "not_started",
         "criteria_passed": 0,
