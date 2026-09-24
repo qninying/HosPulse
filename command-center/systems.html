@@ -32,7 +32,7 @@
   </header>
   <main>
     <h1 class="cc-page-title">Systems</h1>
-    <p class="cc-page-desc">What HosPulse connects to. Supabase and Vercel get a real, live, credential-safe check on page load (Supabase via its public anon key, already shipped in the deployed frontend's own JS bundle; Vercel by fetching the real deployed URL). The Anthropic API and Resend can't be checked from a public static page without exposing a secret key, so those stay honestly grey rather than a green dot nobody can back up.</p>
+    <p class="cc-page-desc">What HosPulse connects to. Supabase and Vercel get a real, live check on every page load, using only credentials that are already public by design. The Anthropic API and Resend are intentionally left unchecked here: verifying them would mean putting a private API key into public, browser-visible code, and this build doesn't do that — a security decision, not a missing feature.</p>
     <div id="cc-content">Loading…</div>
   </main>
   <script src="assets/command-center.js"></script>
@@ -112,7 +112,7 @@
 
     function staticStatus(name, mode) {
       if (mode === "sample") return SAMPLE_STATUS[name] || { cls: "", label: "not checked from here", checked: "never" };
-      if (NOT_CHECKABLE.has(name)) return { cls: "", label: "not checked from here", checked: "never" };
+      if (NOT_CHECKABLE.has(name)) return { cls: "", label: "not exposed here — by design", checked: "n/a" };
       return { cls: "", label: "checking…", checked: "now" };
     }
 
@@ -169,7 +169,7 @@
           ${req ? `<p style="font-size:13px;"><strong>Named by:</strong> <a href="knowledge-base.html#${esc(req.id)}">${esc(req.id)}</a>: ${esc(req.statement)}</p>` : ""}
           <p style="color:var(--cc-muted); font-size:13px;">${checkable
             ? "This dot reflects a real check made from your browser just now (Supabase's public anon key / a direct fetch of the live deployed URL), not a value read from a JSON file."
-            : "No public, credential-free way exists to check this system live from a static page -- a green dot here would be a claim nobody made."}</p>
+            : "Checking this live would require embedding a private API key in public, browser-visible code -- a real security risk on a public page. Rather than fake a status or expose a secret, this indicator is deliberately left unchecked. That is a security decision made in this build, not a missing feature."}</p>
         </div>
       `;
       if (checkable) {
