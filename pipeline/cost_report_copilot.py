@@ -310,9 +310,22 @@ def call_claude_for_findings(
 
 def validate_finding_citations(raw_findings: list[dict], candidates: list[CandidateDiscrepancy]) -> list[dict]:
     """Drops (never raises for) a finding whose cost_report_line is not
-    exactly one of the lines detect_discrepancies() actually produced."""
+    exactly one of the lines detect_discrepancies() actually produced.
+    Logs the reason for each drop -- previously silent, closing the AI
+    Employee Charter's "dropped findings aren't logged with a reason" gap."""
     known_lines = {c.cost_report_line for c in candidates}
-    return [f for f in raw_findings if f.get("cost_report_line") in known_lines]
+    kept = []
+    for f in raw_findings:
+        line = f.get("cost_report_line")
+        if line in known_lines:
+            kept.append(f)
+        else:
+            print(
+                f"warning: dropped finding citing an unflagged cost report line {line!r}; "
+                f"known flagged lines: {sorted(known_lines)}",
+                file=sys.stderr,
+            )
+    return kept
 
 
 def _render_finding_text(finding: dict) -> str:
@@ -332,13 +345,18 @@ def filter_grounded_findings(findings: list[dict], candidates: list[CandidateDis
     one invented number drops only that finding, not its siblings, per the
     acceptance criterion's singular phrasing ('the finding is rejected').
     Builds each returned Finding's numeric fields from the candidate's own
-    known values, never from Claude's echoed numbers."""
+    known values, never from Claude's echoed numbers. Logs the grounding
+    failure reason for each drop -- previously silent."""
     facts = build_facts(candidates)
     by_line = {c.cost_report_line: c for c in candidates}
     kept: list[Finding] = []
     for f in findings:
         result = validate_ai_output_is_grounded(_render_finding_text(f), facts)
         if not result.ok:
+            print(
+                f"warning: dropped ungrounded finding for {f.get('cost_report_line')!r}: {result.reason()}",
+                file=sys.stderr,
+            )
             continue
         c = by_line[f["cost_report_line"]]
         kept.append(

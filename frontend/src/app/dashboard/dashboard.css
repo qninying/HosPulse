@@ -343,6 +343,50 @@
   margin-top: 8px;
 }
 
+.dc-finding-decision {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--dc-border);
+}
+
+.dc-finding-decision input[type="text"] {
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius);
+  background: var(--dc-bg);
+  color: var(--dc-ink);
+}
+
+.dc-finding-decision-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.dc-finding-decision-buttons button {
+  font: inherit;
+  cursor: pointer;
+  background: var(--dc-panel);
+}
+
+.dc-finding-decision-buttons button.dc-chip-active {
+  background: var(--dc-accent-soft);
+}
+
+.dc-finding-error {
+  background: var(--dc-critical-soft);
+  color: var(--dc-critical);
+  border: 1px solid var(--dc-critical);
+  border-radius: var(--dc-radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
 /* Criteria detail */
 
 .dc-criteria-list {

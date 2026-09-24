@@ -160,6 +160,15 @@ def test_drops_a_finding_citing_an_unknown_cost_report_line():
     assert validate_finding_citations(findings, candidates) == []
 
 
+def test_logs_why_an_unknown_cost_report_line_was_dropped(capsys):
+    candidates = detect_discrepancies(_cost_report(cash=16600.0), _ledger(cash=10000.0))
+    findings = [{"cost_report_line": "Worksheet Z, Line 99, Column 1", "explanation": "made up"}]
+    validate_finding_citations(findings, candidates)
+    err = capsys.readouterr().err
+    assert "Worksheet Z, Line 99, Column 1" in err
+    assert "unflagged" in err
+
+
 def test_keeps_a_finding_citing_a_real_cost_report_line():
     candidates = detect_discrepancies(_cost_report(cash=16600.0), _ledger(cash=10000.0))
     real_line = candidates[0].cost_report_line
@@ -178,6 +187,18 @@ def test_drops_a_finding_with_an_ungrounded_dollar_figure():
         "ledger_month": "2024-12-01", "explanation": "The hospital may be owed an extra $500,000.",
     }]
     assert filter_grounded_findings(findings, candidates) == []
+
+
+def test_logs_why_an_ungrounded_finding_was_dropped(capsys):
+    candidates = detect_discrepancies(_cost_report(cash=16600.0), _ledger(cash=10000.0))
+    line = candidates[0].cost_report_line
+    findings = [{
+        "cost_report_line": line, "cost_report_value": 16600.0, "ledger_value": 10000.0,
+        "ledger_month": "2024-12-01", "explanation": "The hospital may be owed an extra $500,000.",
+    }]
+    filter_grounded_findings(findings, candidates)
+    err = capsys.readouterr().err
+    assert line in err
 
 
 def test_keeps_a_finding_that_only_cites_known_values():

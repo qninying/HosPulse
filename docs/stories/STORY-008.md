@@ -28,9 +28,9 @@ Ticks mirror `.hospulse/progress.json`, which is the source of truth. Set `passe
 then run `python3 scripts/build_plan.py` to refresh this file.
 
 - [ ] Given exports from two different hospital systems for the same month, When they are normalized, Then both produce the same standard monthly metrics (cash, days in A/R, denial rate, open positions).
-- [ ] Given an export in a format with no known mapping, When normalization runs, Then the file is marked 'needs mapping' and no metrics are guessed.
-- [ ] Given normalization has already run for a file, When it runs again, Then the monthly metrics are unchanged and not duplicated.
-- [ ] Trust: Every monthly metric links back to the stored file and row it came from.
+- [x] Given an export in a format with no known mapping, When normalization runs, Then the file is marked 'needs mapping' and no metrics are guessed.
+- [x] Given normalization has already run for a file, When it runs again, Then the monthly metrics are unchanged and not duplicated.
+- [x] Trust: Every monthly metric links back to the stored file and row it came from.
 
 ---
 

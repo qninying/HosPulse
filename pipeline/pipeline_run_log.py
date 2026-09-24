@@ -9,10 +9,17 @@ execution state to prevent duplication") on top of that. export_conversions
 and weekly_briefing_emails already give normalization/upload and email
 this same guarantee at a finer grain (one row per file / per send), so
 they are not routed through this table too.
+
+A failed run also triggers a best-effort founder alert (founder_alert.py)
+-- closes the "no active paging" gap every process routed through this
+module used to have. The DB write is the real record either way; the
+alert is a secondary notification that never affects it.
 """
 from __future__ import annotations
 
 import psycopg2
+
+from founder_alert import send_founder_alert
 
 
 def start_pipeline_run(process_name: str, database_url: str, run_key: str | None = None) -> int:
@@ -43,8 +50,15 @@ def finish_pipeline_run(
                 UPDATE pipeline_runs
                 SET status = %s, rows_affected = %s, error_message = %s, completed_at = now()
                 WHERE id = %s
+                RETURNING process_name, run_key
                 """,
                 (status, rows_affected, error_message, run_id),
             )
+            process_name, run_key = cur.fetchone()
     finally:
         conn.close()
+
+    if status == "failed":
+        subject = f"HosPulse pipeline failed: {process_name}"
+        run_desc = f"{process_name}" + (f" ({run_key})" if run_key else "")
+        send_founder_alert(subject, f"Run {run_id} of {run_desc} failed: {error_message}")

@@ -28,10 +28,10 @@ GitHub Actions cron, an idempotency key of (company, week) stored before sending
 Ticks mirror `.hospulse/progress.json`, which is the source of truth. Set `passed` there,
 then run `python3 scripts/build_plan.py` to refresh this file.
 
-- [ ] Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.
-- [ ] Given the run is triggered twice for the same week, When the second run happens, Then no operator receives a second email.
-- [ ] Given the email service fails, When the run finishes, Then the briefing is still saved in the portal and the failure is logged with a retry.
-- [ ] Trust: A company's briefing only ever goes to that company's operators.
+- [x] Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.
+- [x] Given the run is triggered twice for the same week, When the second run happens, Then no operator receives a second email.
+- [x] Given the email service fails, When the run finishes, Then the briefing is still saved in the portal and the failure is logged with a retry.
+- [x] Trust: A company's briefing only ever goes to that company's operators.
 
 ---
 

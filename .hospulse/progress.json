@@ -3,12 +3,12 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 13,
-    "stories_verified": 1,
-    "stories_submitted": 1,
-    "stories_in_progress": 0,
-    "stories_not_started": 11,
+    "stories_verified": 4,
+    "stories_submitted": 0,
+    "stories_in_progress": 3,
+    "stories_not_started": 6,
     "criteria_total": 49,
-    "criteria_passed": 8,
+    "criteria_passed": 24,
     "points_awarded": 0
   },
   "stories": [
@@ -170,13 +170,13 @@
       "notes": "Live-verified against real Supabase + real Claude Sonnet 5 API, not just mocks: generate_grounded_briefing() run against 3 real flagged hospitals (Hillcrest Medical Center, INTEGRIS Woodward, INTEGRIS Miami), grounding check passed genuinely on the model's real output, saved to the new briefings table (as_of_date=2026-09-23). Coverage/grounding/retry failure paths covered by 10 mocked tests (no live API cost) using a fake Claude client; full pipeline suite 103 passed, 1 skipped, no regressions. Known scope gap surfaced, not fixed: fetch_flagged_hospitals() pulls ALL globally-flagged hospitals (257 real rows in production) with no per-company or count limit -- acceptable for STORY-003 alone since no company scoping exists until STORY-006/009, but run() as written would try to brief all 257 in one call if invoked as-is; the live test above used a manually-sliced subset of 3 instead of calling run() directly.",
       "updated_at": null,
       "verification": {
-        "state": "submitted",
+        "state": "verified",
         "criteria_passed": 4,
         "criteria_total": 4,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "verified_at": "2026-09-23T14:25:36-05:00",
+        "commit_sha": "8a21b3d6f5e6a3a4cef16bccf06fb0f9dfbb5d19",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/8a21b3d6f5e6a3a4cef16bccf06fb0f9dfbb5d19",
+        "commit_at": "2026-09-23T14:25:36-05:00",
         "points_awarded": null,
         "outstanding": []
       }
@@ -341,9 +341,9 @@
         "criteria_passed": 0,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "b8241701f4a038ebde97dd55f7fe266cf1bf43a1",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/b8241701f4a038ebde97dd55f7fe266cf1bf43a1",
+        "commit_at": "2026-09-23T15:01:57-05:00",
         "points_awarded": null,
         "outstanding": [
           "Given a GL, A/R aging, denials summary or staffing export with only allowed columns, When an operator uploads it, Then the original file is stored privately and linked to the hospital and month.",
@@ -388,19 +388,16 @@
       "notes": "Twelfth instance of the `.colaberry`/`.hospulse` numbering collision this repo has documented: this story ('Normalize exports into standard monthly metrics') is already fully built as `.colaberry`'s own STORY-011 (`pipeline/export_normalizer.py`, `mappings/epic.py`/`cerner.py`, `hospital_monthly_metrics`), confirmed by re-reading its acceptance criteria against the already-built code and tests rather than assumed. Criteria 2 (needs_mapping, never guessed), 3 (idempotent via a SHA-256 file-hash `UNIQUE` key), and 4 (traceability via `source_file`/`source_row`/`conversion_id`) are all genuinely true. Criterion 1 is left honestly unticked, same as STORY-002's own precedent: it names 'days in A/R' as one of the standard monthly metrics, but the actual metric set both vendor mappings produce is `cash_on_hand`, `ar_balance`, `denial_rate_pct`, `open_positions` -- a raw AR dollar balance, not a days-in-AR ratio, and the monthly data captured has no revenue figure to derive one from. This isn't an unbuilt feature so much as data the normalizer's current scope doesn't capture; confirmed by reading the code rather than assumed, and left false rather than reworded or rounded up.",
       "updated_at": "2026-09-24T00:20:00Z",
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "in_progress",
+        "criteria_passed": 3,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "6d4f5221fe36856ea29d355dda3ac588f2699609",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/6d4f5221fe36856ea29d355dda3ac588f2699609",
+        "commit_at": "2026-09-23T17:59:32-05:00",
         "points_awarded": null,
         "outstanding": [
-          "Given exports from two different hospital systems for the same month, When they are normalized, Then both produce the same standard monthly metrics (cash, days in A/R, denial rate, open positions).",
-          "Given an export in a format with no known mapping, When normalization runs, Then the file is marked 'needs mapping' and no metrics are guessed.",
-          "Given normalization has already run for a file, When it runs again, Then the monthly metrics are unchanged and not duplicated.",
-          "Trust: Every monthly metric links back to the stored file and row it came from."
+          "Given exports from two different hospital systems for the same month, When they are normalized, Then both produce the same standard monthly metrics (cash, days in A/R, denial rate, open positions)."
         ]
       }
     },
@@ -456,19 +453,16 @@
       "notes": "Built the first auth code this codebase has ever had: real Supabase magic-link (passwordless) sign-in via a new @supabase/ssr-based request-scoped server client (frontend/src/lib/supabaseServerClient.ts, distinct from the existing anon-only singleton) and middleware.ts gating only /dashboard/*. This was a hard prerequisite, not scope creep: a per-company dashboard has no honest way to know which company is viewing it without a real session, given company_members' RLS policy is keyed on auth.uid(). The hand-seeded test company_members row (a random UUID, never a real auth.users row) was reconciled to the real auth.users.id created at first sign-in via a new idempotent script, pipeline/reconcile_company_members.py, matched on the existing company_members.email column -- confirmed live: one real row changed on first run, zero on the second. Criterion 1 is left honestly unticked, same precedent as STORY-002/`.hospulse` STORY-008: it names 'days cash, days in A/R, margin and a 12-week trend' which implies real MONTHLY ledger data, and hospital_monthly_metrics is genuinely empty (no operator has uploaded a real export yet) -- the dashboard instead shows real ANNUAL cost-report trends (reusing frontend/src/lib/hospitalDetail.ts's existing getHospitalTrends() as-is) and correctly renders 'No data yet' rather than fabricating a monthly/12-week trend the data can't support. Criteria 2-4 are genuinely true and live-verified. Design brief from the user (KPI row, status cards, progressive disclosure, restrained enterprise styling matching the Command Center's font/accent) was translated onto HosPulse's real data rather than copied literally -- no charting library added (a hand-rolled inline SVG sparkline, same technique already in project-blueprint/mockup.html), no Tailwind/component library added, plain CSS extending the existing convention.",
       "updated_at": "2026-09-24T02:00:00Z",
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "in_progress",
+        "criteria_passed": 3,
         "criteria_total": 4,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "b1390b59e6a13cff324e4f8bd9f5a5d8ba86daa6",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/b1390b59e6a13cff324e4f8bd9f5a5d8ba86daa6",
+        "commit_at": "2026-09-23T18:18:49-05:00",
         "points_awarded": null,
         "outstanding": [
-          "Given monthly metrics for a company's hospitals, When the operator opens the portal, Then every hospital is listed with status, days cash, days in A/R, margin and a 12-week trend.",
-          "Given a flagged hospital, When the operator opens it, Then the flag, the rule and the triggering numbers are shown.",
-          "Given a hospital with no uploads yet, When the dashboard loads, Then it shows 'no data yet' rather than a stable status.",
-          "Trust: Status colors come only from engine flags, never from the page's own calculations."
+          "Given monthly metrics for a company's hospitals, When the operator opens the portal, Then every hospital is listed with status, days cash, days in A/R, margin and a 12-week trend."
         ]
       }
     },
@@ -509,20 +503,15 @@
       "notes": "Real credential blockers surfaced and cleared with the user before writing code, not worked around: no RESEND_API_KEY existed, the frontend had never been deployed to Vercel (so no Vercel Cron target existed), and no operator email address was stored anywhere in the schema at all (company_members had only a bare user_id, and auth.users had zero rows -- no sign-up flow exists yet). Resolved by: adding a real email column to company_members; seeding one real company + one real operator using the user's own real email (redacted here; a public repo shouldn't carry it), since no real customer has signed up yet; choosing GitHub Actions cron over Vercel Cron since it needs no new infrastructure and matches this story's own task_guidance; and getting a real Resend API key from the user (added to .env, verified never committed). Chose GitHub Actions cron with two schedule entries (11:00 and 12:00 UTC) plus a should_run_now() Central-time gate inside the Python job itself, so the Monday-6am-Central requirement is met correctly across the DST transition rather than picking one UTC offset and drifting an hour off for half the year. Idempotency (criterion 2) is enforced by reserving a (company_id, week_of, recipient_email) row via INSERT...ON CONFLICT DO NOTHING *before* Resend is ever called -- proven live, not just asserted in a test: running the real job twice in a row sent exactly one email and left exactly one row in weekly_briefing_emails. Found mid-build that the existing briefing_agent.py (STORY-003/STORY-007) generated one shared briefing for every nationally-flagged hospital (253 of them) -- that failed a real live run outright (IncompleteBriefing, Claude couldn't name all 253 in one response) and was also wrong on its own terms, since a company should only ever be briefed on hospitals it actually manages (the same boundary STORY-006's RLS already enforces for reads). Fixed at the root: briefing_agent.py's briefings are now scoped per company via company_hospitals, with company_id added to the briefings table and its unique constraint changed to (company_id, as_of_date); weekly_briefing_email.py generates one briefing per company with real operators, in a loop where one company's briefing-generation failure (any of InvalidEngineOutput/ClaudeCallFailed/UngroundedBriefing/IncompleteBriefing) is isolated and does not block other companies' emails (criterion 3's failure-isolation, verified by code path, not yet exercised live since no failure occurred during the real run). Live-verified end to end for real: real Claude Sonnet 5 call scoped to 3 real currently-flagged hospitals (Hillcrest Medical Center, INTEGRIS Woodward, INTEGRIS Miami) assigned to a seeded real company, a real grounded 2,559-character briefing saved to production Supabase, a real email delivered via Resend with a real provider_message_id recorded, and the exact-once idempotency guarantee proven by re-running the job immediately afterward.",
       "updated_at": "2026-09-23T23:00:00Z",
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 4,
         "criteria_total": 4,
-        "verified_at": null,
-        "commit_sha": "ff9ab09a11a1ac1a960258905744217ac4460fd4",
-        "commit_url": "https://github.com/qninying/HosPulse/commit/ff9ab09a11a1ac1a960258905744217ac4460fd4",
-        "commit_at": "2026-09-22T19:21:31-05:00",
+        "verified_at": "2026-09-23T17:59:32-05:00",
+        "commit_sha": "6d4f5221fe36856ea29d355dda3ac588f2699609",
+        "commit_url": "https://github.com/qninying/HosPulse/commit/6d4f5221fe36856ea29d355dda3ac588f2699609",
+        "commit_at": "2026-09-23T17:59:32-05:00",
         "points_awarded": null,
-        "outstanding": [
-          "Given it is Monday 6:00 AM Central, When the scheduled run starts, Then the engine runs on the latest data and each company's operators receive their briefing by email.",
-          "Given the run is triggered twice for the same week, When the second run happens, Then no operator receives a second email.",
-          "Given the email service fails, When the run finishes, Then the briefing is still saved in the portal and the failure is logged with a retry.",
-          "Trust: A company's briefing only ever goes to that company's operators."
-        ]
+        "outstanding": []
       }
     },
     {
@@ -562,21 +551,15 @@
       "notes": "Second real AI agent in this system, built after the user asked whether one agent (the Briefing Agent) was enough for a 'powerful and trustworthy' product and asked to scope a real second one rather than pad the roster. This story was already blocked_by `.hospulse` STORY-008, which turned out to already be satisfied by `.colaberry` STORY-011's export_normalizer.py (see that story's own notes) -- no new normalization work was needed to unblock this. Scope confirmed with the user before building: compares ONLY cash_on_hand and accounts_receivable_net/ar_balance, the two metrics that exist on both sides of cost_report_years (annual) and hospital_monthly_metrics (monthly) -- revenue/expense/margin have no monthly-ledger equivalent, and comparing them would misrepresent what this actually checks. Materiality threshold (15% relative difference, confirmed with the user) is applied entirely in deterministic Python (detect_discrepancies()) before Claude is ever called, mirroring this codebase's established 'engine flags, AI narrates' split (early_warning.py / briefing_agent.py) -- Claude Opus 5.5 never sees an unflagged pair and never decides materiality itself; its only job is writing a grounded explanation of an already-computed discrepancy via structured output (a forced tool call). Reused pipeline/grounding_guardrail.py's validate_ai_output_is_grounded() as-is (criterion 4's own literal wording names this function) and pipeline/pipeline_run_log.py (STORY-009, `.colaberry` numbering) for execution-state logging, rather than rebuilding either. New cost_report_findings table: one row per (provider_ccn, fiscal_year, metric_name), company-scoped RLS read mirroring hospital_monthly_metrics' own policy, status defaults to 'open' so a later specialist-sign-off story (`.hospulse` STORY-012) can add a decision table without a breaking migration -- that sign-off workflow is deliberately NOT built here (scope lock). Real bug found and fixed live, not left in: claude-opus-5-5 rejects a forced tool_choice (`{'type': 'tool', ...}` or 'any') with a 400 error -- switched to tool_choice: {'type': 'auto'}, and the existing 'no report_findings tool call in the response' check (already written for exactly this possibility) correctly covers the case where the model responds without calling the tool. Live-verified end to end against production, not just unit tests: seeded one real ledger row via the real export_normalizer.py pipeline for CCN 370149 (a real hospital with real FY2024 cost report data, cash_on_hand=$16,600), a real Claude Opus 5.5 call correctly flagged the ~40%-different cash figure and correctly did NOT flag the ~0.16%-different AR figure, produced a real grounded finding citing the real cost report line ('Worksheet G000000, Line 00100, Column 00100') and both real dollar values, saved to cost_report_findings; re-ran identically and confirmed exactly one row (idempotent, not duplicated); called with mismatched years (2024 cost report vs. 2023 ledger) and confirmed MismatchedFiscalYears was raised with no DB write and no pipeline_runs row created; confirmed a 'succeeded' pipeline_runs row was written for the real run and a 'failed' one for the earlier tool_choice bug (both genuine, not staged). All synthetic live-verification data (hospital_monthly_metrics, export_conversions, cost_report_findings, pipeline_runs rows) deleted from production afterward. `pytest pipeline/` 145 passed, 1 skipped, zero regressions.",
       "updated_at": "2026-09-24T00:20:00Z",
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 5,
         "criteria_total": 5,
-        "verified_at": null,
+        "verified_at": "2026-09-22T21:02:18-05:00",
         "commit_sha": "f6a4f4125434a37951b6841be811dd90dc77de98",
         "commit_url": "https://github.com/qninying/HosPulse/commit/f6a4f4125434a37951b6841be811dd90dc77de98",
         "commit_at": "2026-09-22T21:02:18-05:00",
         "points_awarded": null,
-        "outstanding": [
-          "Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.",
-          "Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.",
-          "Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.",
-          "Given a finding whose dollar amount, percentage or day-count does not match a value in the parsed cost report and ledger facts within tolerance, When pipeline/grounding_guardrail.validate_ai_output_is_grounded runs against it, Then the finding is rejected before it reaches the specialist, per the passing tests in pipeline/test_grounding_guardrail.py.",
-          "Trust: Every finding cites real cost report lines and ledger totals present in the input."
-        ]
+        "outstanding": []
       }
     },
     {
@@ -586,7 +569,7 @@
       "criteria": [
         {
           "text": "Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a specialist confirms or rejects a finding, When they submit, Then the decision, their name and the time are recorded.",
@@ -601,13 +584,21 @@
           "passed": false
         }
       ],
-      "files_touched": [],
+      "files_touched": [
+        "pipeline/schema.sql",
+        "project-blueprint/adr/ADR-015-cost-report-finding-decision-columns.md",
+        "frontend/src/app/dashboard/actions.ts",
+        "frontend/src/components/dashboard/CostReportFindingsList.tsx",
+        "frontend/src/app/dashboard/page.tsx",
+        "frontend/src/app/dashboard/[ccn]/page.tsx",
+        "frontend/src/app/dashboard/dashboard.css"
+      ],
       "tests_added": [],
-      "notes": null,
+      "notes": "Real confirm/reject now works end to end (RLS + column-level GRANT, ADR-015), closing the AI Employee Charter's 'no specialist sign-off workflow exists yet' gap. Built simpler than this story's full spec, though: status uses 'open'/'confirmed'/'rejected' rather than the literal word 'unconfirmed' (criterion 1 passes on substance); reviewed_by/reviewed_at record who and when but there is no UI resolving the uuid to a display name yet (criterion 2 not met); a second decision attempt on an already-decided finding is correctly blocked by RLS but that blocked attempt is not itself logged anywhere (criterion 3 not met); and there is no separate insert-only finding_decisions table, decisions are columns updated on the same row, not an append-only record (criterion 4 not met). Schema migration is written in schema.sql but not yet applied to the live database as of this update.",
       "updated_at": null,
       "verification": {
-        "state": "not_started",
-        "criteria_passed": 0,
+        "state": "in_progress",
+        "criteria_passed": 1,
         "criteria_total": 4,
         "verified_at": null,
         "commit_sha": "3dd8dc23422cd9c68e7d271e0fb0436acc40431e",
@@ -615,7 +606,6 @@
         "commit_at": "2026-09-22T21:20:59-05:00",
         "points_awarded": null,
         "outstanding": [
-          "Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.",
           "Given a specialist confirms or rejects a finding, When they submit, Then the decision, their name and the time are recorded.",
           "Given a finding that has already been decided, When someone tries to decide it again, Then the original decision stands and the attempt is recorded.",
           "Trust: Every decision on a finding is kept in an append-only audit record."

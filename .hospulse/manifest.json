@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-23T19:20:28Z",
+  "generated_at": "2026-09-24T21:45:18Z",
   "plan_version": 1,
   "files": [
     {
@@ -8,7 +8,7 @@
     },
     {
       "path": ".hospulse/progress.json",
-      "sha256": "1b43ec21543308f5a991f6c95da1a4943cd36143a92f3b269f49490037ec554e"
+      "sha256": "a616c02309b3c1291572bdd959ffef71ec89a648cac433c3a09f5b4de45f0ca8"
     },
     {
       "path": "docs/REQUIREMENTS.md",
@@ -56,23 +56,23 @@
     },
     {
       "path": "docs/stories/STORY-008.md",
-      "sha256": "48d953113eab4e4edd6cfff823fc56062830a058ca974d703950da66f2cc2dd0"
+      "sha256": "4ae7f99b7ab7f504fb22845b21c3b1fc7b7e1b1f82e75d2cf98f21a745039fc6"
     },
     {
       "path": "docs/stories/STORY-009.md",
-      "sha256": "6bc5791c051d972cecfeb3dc22bc71cdf6e444627244bedf6adc6df9a5a63761"
+      "sha256": "57f7269739ebf65e9f2330dc68bef48263e73f2796f760e7e262ed1186314163"
     },
     {
       "path": "docs/stories/STORY-010.md",
-      "sha256": "8ec3c770a2e07376c5059b775368d8f6780104d338f105f86a084ef76e5d439f"
+      "sha256": "a1a82f30edcca668f4ad1d2e60abbaa15fd9f7d119c59efd947bc5ee5874723b"
     },
     {
       "path": "docs/stories/STORY-011.md",
-      "sha256": "7ced0583e33cf8082e37dd61d665673a7e2ced13fe848d26ff9a5b38f18704e9"
+      "sha256": "33df31f6624632c59e5a0d8a2a8760ac9edc2b9ca0ce376cae23c3363e2dee2e"
     },
     {
       "path": "docs/stories/STORY-012.md",
-      "sha256": "9efc70c6db723e19d81ca0d77e6609d6d3018dba8bad6317bbb7ac681036731c"
+      "sha256": "2b121d14f7dafc91c164817f87ce73481fc4833c550229b16568c639fa72366b"
     }
   ]
 }

@@ -26,11 +26,11 @@ Claude Opus 5.5 with structured output. Check every cited line against the parse
 Ticks mirror `.hospulse/progress.json`, which is the source of truth. Set `passed` there,
 then run `python3 scripts/build_plan.py` to refresh this file.
 
-- [ ] Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.
-- [ ] Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.
-- [ ] Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.
-- [ ] Given a finding whose dollar amount, percentage or day-count does not match a value in the parsed cost report and ledger facts within tolerance, When pipeline/grounding_guardrail.validate_ai_output_is_grounded runs against it, Then the finding is rejected before it reaches the specialist, per the passing tests in pipeline/test_grounding_guardrail.py.
-- [ ] Trust: Every finding cites real cost report lines and ledger totals present in the input.
+- [x] Given a hospital's cost report and ledger totals for the same year, When the co-pilot runs, Then it lists possible missed items, each with the cost report line and ledger total it compared.
+- [x] Given a cost report and ledger for different years, When the co-pilot is asked to compare them, Then it refuses and says why.
+- [x] Given a finding that cites a cost report line that does not exist, When the result is checked, Then that finding is dropped.
+- [x] Given a finding whose dollar amount, percentage or day-count does not match a value in the parsed cost report and ledger facts within tolerance, When pipeline/grounding_guardrail.validate_ai_output_is_grounded runs against it, Then the finding is rejected before it reaches the specialist, per the passing tests in pipeline/test_grounding_guardrail.py.
+- [x] Trust: Every finding cites real cost report lines and ledger totals present in the input.
 
 ---
 

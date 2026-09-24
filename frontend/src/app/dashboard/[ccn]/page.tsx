@@ -15,14 +15,16 @@ import { CriterionDetail } from "@/components/dashboard/CriterionDetail";
 
 type PageProps = {
   params: Promise<{ ccn: string }>;
+  searchParams: Promise<{ findingError?: string }>;
 };
 
 // The "Investigation -> Detailed data" layer of progressive disclosure:
 // the exact triggering criteria (not just the status), this hospital's
 // open findings, and its full trend -- everything the summary card on
 // /dashboard deliberately left out.
-export default async function DashboardHospitalPage({ params }: PageProps) {
+export default async function DashboardHospitalPage({ params, searchParams }: PageProps) {
   const { ccn } = await params;
+  const { findingError } = await searchParams;
   const client = await createSupabaseServerClient();
   const companyOutcome = await getCurrentCompany(client);
 
@@ -59,6 +61,7 @@ export default async function DashboardHospitalPage({ params }: PageProps) {
 
   return (
     <main className="dc-dashboard">
+      {findingError && <p className="dc-finding-error" role="alert">{findingError}</p>}
       <p>
         <Link href="/dashboard">&larr; Back to dashboard</Link>
       </p>
@@ -94,6 +97,7 @@ export default async function DashboardHospitalPage({ params }: PageProps) {
         <CostReportFindingsList
           findings={findingsOutcome.findings}
           hospitalNames={{ [hospital.provider_ccn]: hospital.name }}
+          returnTo={`/dashboard/${hospital.provider_ccn}`}
         />
       </Card>
     </main>

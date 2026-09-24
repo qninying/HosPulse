@@ -451,6 +451,55 @@ CREATE POLICY "company scoped read" ON cost_report_findings
         )
     );
 
+-- Specialist sign-off (closes the AI Employee Charter's "no specialist
+-- sign-off workflow exists yet" gap). STORY-011 deliberately left `status`
+-- at 'open' forever with no decision path; this adds the real one.
+ALTER TABLE cost_report_findings
+    ADD COLUMN IF NOT EXISTS reviewed_by uuid REFERENCES auth.users(id),
+    ADD COLUMN IF NOT EXISTS reviewed_at timestamptz,
+    ADD COLUMN IF NOT EXISTS decision_note text;
+
+-- status had no CHECK constraint before this -- 'open' was just a
+-- default, not an enforced value. Adding one now that there are real
+-- transitions to constrain; the existing default still satisfies it.
+ALTER TABLE cost_report_findings DROP CONSTRAINT IF EXISTS cost_report_findings_status_check;
+ALTER TABLE cost_report_findings
+    ADD CONSTRAINT cost_report_findings_status_check CHECK (status IN ('open', 'confirmed', 'rejected'));
+
+-- authenticated already holds a blanket UPDATE grant on this table
+-- (Supabase's schema-level default, same fact the STORY-006 comment above
+-- documents) -- RLS alone cannot stop a company member from updating
+-- cost_report_value, explanation, or any other financial field on a row
+-- their own company can see, only WHICH ROWS they can touch. Revoking the
+-- blanket grant and re-granting UPDATE on exactly the four decision
+-- columns closes that gap at the column-privilege level, independent of
+-- and in addition to the row-level policy below. See
+-- ADR-015-cost-report-finding-decision-columns.md.
+REVOKE UPDATE ON cost_report_findings FROM authenticated;
+GRANT UPDATE (status, reviewed_by, reviewed_at, decision_note) ON cost_report_findings TO authenticated;
+
+DROP POLICY IF EXISTS "company scoped decision" ON cost_report_findings;
+CREATE POLICY "company scoped decision" ON cost_report_findings
+    FOR UPDATE USING (
+        status = 'open'
+        AND EXISTS (
+            SELECT 1 FROM company_hospitals ch
+            JOIN company_members cm ON cm.company_id = ch.company_id
+            WHERE ch.provider_ccn = cost_report_findings.provider_ccn
+              AND cm.user_id = auth.uid()
+        )
+    )
+    WITH CHECK (
+        status IN ('confirmed', 'rejected')
+        AND reviewed_by = auth.uid()
+        AND EXISTS (
+            SELECT 1 FROM company_hospitals ch
+            JOIN company_members cm ON cm.company_id = ch.company_id
+            WHERE ch.provider_ccn = cost_report_findings.provider_ccn
+              AND cm.user_id = auth.uid()
+        )
+    );
+
 -- STORY-009 (REQ-015): execution-state log for the two processes that had
 -- no audit trail of their own runs. export_conversions and
 -- weekly_briefing_emails already serve this purpose for

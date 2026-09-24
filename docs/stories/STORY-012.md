@@ -26,7 +26,7 @@ A findings table with a status column, a separate insert-only finding_decisions 
 Ticks mirror `.hospulse/progress.json`, which is the source of truth. Set `passed` there,
 then run `python3 scripts/build_plan.py` to refresh this file.
 
-- [ ] Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.
+- [x] Given a new co-pilot finding, When it is shown, Then it is marked 'unconfirmed' and cannot be exported as confirmed.
 - [ ] Given a specialist confirms or rejects a finding, When they submit, Then the decision, their name and the time are recorded.
 - [ ] Given a finding that has already been decided, When someone tries to decide it again, Then the original decision stands and the attempt is recorded.
 - [ ] Trust: Every decision on a finding is kept in an append-only audit record.

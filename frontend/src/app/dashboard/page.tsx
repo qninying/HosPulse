@@ -15,11 +15,11 @@ import { CostReportFindingsList } from "@/components/dashboard/CostReportFinding
 import { TrendPanel } from "@/components/dashboard/TrendPanel";
 
 type PageProps = {
-  searchParams: Promise<{ trend?: string }>;
+  searchParams: Promise<{ trend?: string; findingError?: string }>;
 };
 
 export default async function DashboardPage({ searchParams }: PageProps) {
-  const { trend } = await searchParams;
+  const { trend, findingError } = await searchParams;
   const client = await createSupabaseServerClient();
   const companyOutcome = await getCurrentCompany(client);
 
@@ -68,6 +68,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
   return (
     <main className="dc-dashboard">
+      {findingError && <p className="dc-finding-error" role="alert">{findingError}</p>}
       <div className="dc-titlebar">
         <div>
           <h1>{company.name}</h1>
@@ -155,7 +156,7 @@ export default async function DashboardPage({ searchParams }: PageProps) {
 
       <section id="findings">
         <Card title="Possible missed reimbursement">
-          <CostReportFindingsList findings={findingsOutcome.findings} hospitalNames={hospitalNames} />
+          <CostReportFindingsList findings={findingsOutcome.findings} hospitalNames={hospitalNames} returnTo="/dashboard" />
         </Card>
       </section>
     </main>

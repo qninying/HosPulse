@@ -28,9 +28,9 @@ Ticks mirror `.hospulse/progress.json`, which is the source of truth. Set `passe
 then run `python3 scripts/build_plan.py` to refresh this file.
 
 - [ ] Given monthly metrics for a company's hospitals, When the operator opens the portal, Then every hospital is listed with status, days cash, days in A/R, margin and a 12-week trend.
-- [ ] Given a flagged hospital, When the operator opens it, Then the flag, the rule and the triggering numbers are shown.
-- [ ] Given a hospital with no uploads yet, When the dashboard loads, Then it shows 'no data yet' rather than a stable status.
-- [ ] Trust: Status colors come only from engine flags, never from the page's own calculations.
+- [x] Given a flagged hospital, When the operator opens it, Then the flag, the rule and the triggering numbers are shown.
+- [x] Given a hospital with no uploads yet, When the dashboard loads, Then it shows 'no data yet' rather than a stable status.
+- [x] Trust: Status colors come only from engine flags, never from the page's own calculations.
 
 ---
 
