@@ -719,6 +719,32 @@
       ],
       "skills": [],
       "owns": ["STORY-007", "STORY-008"]
+    },
+    {
+      "id": "AGENT-002",
+      "name": "Cost Report Co-pilot",
+      "purpose": "Compares a hospital's annual CMS cost report (cash position and A/R balance) against its own operator-uploaded monthly ledger for the same fiscal year, to surface possible missed reimbursement. Scoped to only these two metrics -- the only ones that exist on both sides of the data. This agent fulfils a story tracked under this repo's separate `.hospulse` numbering (STORY-011 there, distinct from this plan's own STORY-011 which is the already-built export normalizer -- not the same story despite the shared id), so it owns no story id in this plan.",
+      "trigger_type": "on_demand",
+      "trigger": "Run manually per hospital/year: python3 pipeline/cost_report_copilot.py <provider_ccn> <cost_report_fiscal_year> <ledger_year>. Not yet wired to a schedule.",
+      "inputs": [
+        "cost_report_years.cash_on_hand / accounts_receivable_net for one hospital's fiscal year, with per-metric worksheet/line/column provenance",
+        "hospital_monthly_metrics.cash_on_hand / ar_balance for the ledger month matching the cost report's fiscal-year-end"
+      ],
+      "outputs": [
+        "Zero or more rows in cost_report_findings, one per (hospital, year, metric) that crossed the materiality threshold"
+      ],
+      "autonomy_level": "autonomous",
+      "approval_gates": [
+        "detect_discrepancies(): a deterministic, non-AI threshold check (a relative difference exceeding 15%) decides which pairs are even shown to Claude -- materiality is never the model's own judgment call",
+        "validate_finding_citations(): a finding citing a cost report line that was never actually flagged is dropped before it is saved",
+        "filter_grounded_findings(): grounding_guardrail.validate_ai_output_is_grounded rejects, per finding, any explanation stating a dollar figure not present in the engine's own facts"
+      ],
+      "escalation_rules": [
+        "A finding that fails citation or grounding validation is dropped individually; it does not block or invalidate any other finding in the same run",
+        "Claude API failures retry with capped exponential backoff, then fail loudly (ClaudeCallFailed) rather than saving an unverified finding"
+      ],
+      "skills": [],
+      "owns": []
     }
   ],
   "project": {
@@ -794,10 +820,10 @@
       },
       "stories_total": 13,
       "releases_total": 5,
-      "agents_total": 1,
+      "agents_total": 2,
       "failure_paths_total": 41,
       "agents_by_autonomy": {
-        "autonomous": 1
+        "autonomous": 2
       }
     }
   }

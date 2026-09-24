@@ -32,7 +32,7 @@
   </header>
   <main>
     <h1 class="cc-page-title">AI Agents</h1>
-    <p class="cc-page-desc">The AI agents HosPulse is built around: what triggers them, what they may do on their own, and where an automatic check stands in the way before anything ships. This file doesn't track run history yet, so "no runs recorded" below means that, not that the agent has never executed -- see PROGRESS.md for real verification runs.</p>
+    <p class="cc-page-desc">The AI agents HosPulse is built around: what triggers them, what they may do on their own, and where an automatic check stands in the way before anything ships. Run counts come from a manual production snapshot (<code>pipeline/export_agent_run_stats.py</code>), not a live feed -- "no runs recorded" means genuinely none, not that the snapshot is stale.</p>
     <div id="cc-content">Loading…</div>
   </main>
   <script src="assets/command-center.js"></script>
@@ -40,7 +40,10 @@
   (function () {
     const { esc, getParam, statusDot, sampleBadge, storyState } = CommandCenter;
 
-    // Sample overlay only. Real mode always says "no runs recorded".
+    // Sample overlay only. Real mode reads agent_runs.json (a manual
+    // snapshot of production, see pipeline/export_agent_run_stats.py) and
+    // only falls back to "no runs recorded" when that file has nothing for
+    // this agent id -- genuinely true until the agent has actually run.
     const SAMPLE_RUNS = {
       "AGENT-001": "11 runs recorded, last Monday 6:02 AM, 1 briefing rejected by the grounding check",
       "AGENT-002": "3 reviews run, 7 findings, 4 confirmed by a specialist",
@@ -50,11 +53,19 @@
       return items && items.length ? `<ul style="margin:4px 0 12px; font-size:13px;">${items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>` : `<p style="color:var(--cc-muted); font-size:13px;">none</p>`;
     }
 
-    function runs(agent, mode) {
-      return mode === "sample" && SAMPLE_RUNS[agent.id] ? `${SAMPLE_RUNS[agent.id]}` : "no runs recorded";
+    function formatRealRuns(stats) {
+      if (!stats || !stats.runs_recorded) return "no runs recorded";
+      const when = stats.last_run_at ? new Date(stats.last_run_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "unknown time";
+      const outcomeBits = Object.entries(stats.outcomes || {}).filter(([, count]) => count).map(([label, count]) => `${count} ${label}`);
+      return `${stats.runs_recorded} run${stats.runs_recorded === 1 ? "" : "s"} recorded, last ${when}` + (outcomeBits.length ? ` -- ${outcomeBits.join(", ")}` : "");
     }
 
-    function renderList({ plan, mode }) {
+    function runs(agent, mode, agentRuns) {
+      if (mode === "sample") return SAMPLE_RUNS[agent.id] || "no runs recorded";
+      return formatRealRuns(agentRuns && agentRuns.agents && agentRuns.agents[agent.id]);
+    }
+
+    function renderList({ plan, mode, agentRuns }) {
       const el = document.getElementById("cc-content");
       const agents = plan.agents || [];
       const owners = CommandCenter.ownersFromPlan(plan);
@@ -63,7 +74,7 @@
           <h3>${esc(a.name)}${sampleBadge()}</h3>
           <p>${esc(a.purpose)}</p>
           <p style="margin-top:8px;"><span class="cc-tag">${esc(a.autonomy_level)}</span> <span class="cc-tag">${esc(a.trigger_type)}</span></p>
-          <p style="margin-top:8px;">${esc(runs(a, mode))}</p>
+          <p style="margin-top:8px;">${esc(runs(a, mode, agentRuns))}</p>
         </a>`).join("") + `</div>` : `<div class="cc-empty-state">The plan has no AI agents defined.</div>`;
       el.innerHTML = agentCards + `
         <div class="cc-panel-box" style="margin-top:24px;">
@@ -75,7 +86,7 @@
         </div>`;
     }
 
-    function renderDetail({ plan, progress, mode }, id) {
+    function renderDetail({ plan, progress, mode, agentRuns }, id) {
       const el = document.getElementById("cc-content");
       const a = (plan.agents || []).find((x) => x.id === id);
       if (!a) {
@@ -94,7 +105,7 @@
           <p style="font-size:13px; margin-bottom:0;"><strong>Approval gates</strong></p>${list(a.approval_gates)}
           <p style="font-size:13px; margin-bottom:0;"><strong>Escalation rules</strong></p>${list(a.escalation_rules)}
           <p style="font-size:13px;"><strong>Skills:</strong> ${a.skills && a.skills.length ? esc(a.skills.join(", ")) : "no skills registered yet"}</p>
-          <p style="font-size:13px;"><strong>Runs:</strong> ${esc(runs(a, mode))}</p>
+          <p style="font-size:13px;"><strong>Runs:</strong> ${esc(runs(a, mode, agentRuns))}</p>
           <div class="cc-table-wrap"><table class="cc-table"><thead><tr><th>Owns story</th><th>Title</th><th>State (real)</th></tr></thead><tbody>
           ${(a.owns || []).map((sid) => {
             const s = (plan.stories || []).find((x) => x.id === sid);

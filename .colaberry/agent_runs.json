@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-09-24T00:17:36.774053+00:00",
+  "agents": {
+    "AGENT-001": {
+      "runs_recorded": 1,
+      "last_run_at": "2026-09-23T22:47:45.145383+00:00",
+      "outcomes": {
+        "sent": 1,
+        "failed": 0,
+        "pending": 0
+      }
+    },
+    "AGENT-002": {
+      "runs_recorded": 0,
+      "last_run_at": null,
+      "outcomes": {}
+    }
+  }
+}

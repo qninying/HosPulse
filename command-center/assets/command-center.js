@@ -70,8 +70,14 @@ async function loadData() {
     console.error(`[command-center] could not load ${name}:`, err.message);
     return null;
   });
-  const [plan, progress, manifest] = await Promise.all([load("plan.json"), load("progress.json"), load("manifest.json")]);
-  return { plan, progress, manifest };
+  // agent_runs.json is a manual snapshot (pipeline/export_agent_run_stats.py),
+  // not portal-generated like the other three -- missing/stale is expected
+  // whenever no agent has run yet, so its absence is not logged as an error.
+  const [plan, progress, manifest, agentRuns] = await Promise.all([
+    load("plan.json"), load("progress.json"), load("manifest.json"),
+    fetchJson(`${DATA_DIR}/agent_runs.json`).catch(() => null),
+  ]);
+  return { plan, progress, manifest, agentRuns };
 }
 
 function formatDataAsOf(manifest) {
@@ -199,7 +205,7 @@ function renderChrome(activeTabId, dataAsOf, plan) {
 // init(tabId, renderFn): fetch data, render shared chrome, then hand the page
 // { plan, progress, manifest, mode, dataAsOf }. Pages must handle plan === null.
 async function init(tabId, renderFn) {
-  const { plan, progress, manifest } = await loadData();
+  const { plan, progress, manifest, agentRuns } = await loadData();
   const dataAsOf = formatDataAsOf(manifest);
   renderChrome(tabId, dataAsOf, plan);
   const el = document.getElementById("cc-content");
@@ -212,7 +218,7 @@ async function init(tabId, renderFn) {
   // object so every page's `plan.schedule.field` reads undefined rather
   // than throwing, and renders an honest blank instead of crashing.
   if (!plan.schedule) plan.schedule = {};
-  if (renderFn) renderFn({ plan, progress, manifest, mode: getMode(), dataAsOf });
+  if (renderFn) renderFn({ plan, progress, manifest, agentRuns, mode: getMode(), dataAsOf });
 }
 
 window.CommandCenter = {

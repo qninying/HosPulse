@@ -402,6 +402,50 @@ CREATE POLICY "company scoped read" ON weekly_briefing_emails
         )
     );
 
+-- STORY-011 (`.hospulse` numbering): Cost Report Co-pilot findings.
+-- Compares a hospital's annual cost report (cost_report_years) against its
+-- monthly ledger (hospital_monthly_metrics) for the same fiscal year, for
+-- cash_on_hand and ar_balance only (the only two metrics that exist on
+-- both sides). One row per (provider_ccn, fiscal_year, metric_name) --
+-- re-running upserts, never duplicates. Private per-company data, same
+-- company-scoped read pattern as hospital_monthly_metrics.
+--
+-- status defaults to 'open' and this story adds no decision logic on top
+-- of it -- a later story's specialist-sign-off workflow can FK to this
+-- table's id without needing a schema change here.
+CREATE TABLE IF NOT EXISTS cost_report_findings (
+    id                       bigserial PRIMARY KEY,
+    provider_ccn             text NOT NULL REFERENCES hospitals(provider_ccn),
+    fiscal_year              int NOT NULL,
+    metric_name              text NOT NULL,   -- 'cash_on_hand' | 'ar_balance'
+    cost_report_line         text NOT NULL,   -- e.g. "Worksheet G, Line 1, Column 1"
+    cost_report_value        numeric NOT NULL,
+    ledger_month             date NOT NULL,   -- first-of-month; the exact hospital_monthly_metrics row cited
+    ledger_value             numeric NOT NULL,
+    relative_difference_pct  numeric NOT NULL,
+    explanation              text NOT NULL,   -- Claude's grounded plain-English narration
+    model                    text NOT NULL,
+    status                   text NOT NULL DEFAULT 'open',
+    generated_at             timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (provider_ccn, fiscal_year, metric_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cost_report_findings_provider ON cost_report_findings(provider_ccn);
+CREATE INDEX IF NOT EXISTS idx_cost_report_findings_status ON cost_report_findings(status);
+
+ALTER TABLE cost_report_findings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "company scoped read" ON cost_report_findings;
+CREATE POLICY "company scoped read" ON cost_report_findings
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM company_hospitals ch
+            JOIN company_members cm ON cm.company_id = ch.company_id
+            WHERE ch.provider_ccn = cost_report_findings.provider_ccn
+              AND cm.user_id = auth.uid()
+        )
+    );
+
 -- STORY-009 (REQ-015): execution-state log for the two processes that had
 -- no audit trail of their own runs. export_conversions and
 -- weekly_briefing_emails already serve this purpose for
