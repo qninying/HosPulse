@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "./home.css";
 import {
   normalizeSearchTerm,
   searchHospitalsByName,
@@ -19,45 +20,66 @@ export default async function Home({ searchParams }: PageProps) {
   const outcome = term ? await searchHospitalsByName(term) : null;
 
   return (
-    <main>
-      <h1>HosPulse Health Snapshot</h1>
-      <p>Search for a hospital to see its public financial trends.</p>
-
-      <form action="/" method="GET">
-        <label htmlFor="q">Hospital name</label>{" "}
-        <input
-          id="q"
-          name="q"
-          type="text"
-          defaultValue={term}
-          placeholder="e.g. Anson General"
-        />{" "}
-        <button type="submit">Search</button>
-      </form>
-
-      {outcome && !outcome.ok && (
-        <p role="alert">
-          We couldn&apos;t retrieve hospital data right now. Please try again
-          in a moment. ({outcome.error})
+    <main className="hp-home">
+      <section className="hp-hero">
+        <span className="hp-eyebrow">Public CMS cost report data &middot; no login required</span>
+        <h1>HosPulse Health Snapshot</h1>
+        <p className="hp-lede">
+          Search for a rural or Critical Access Hospital to see its public
+          financial trends.
         </p>
-      )}
 
-      {outcome && outcome.ok && outcome.hospitals.length === 0 && (
-        <p>No hospital found matching &quot;{term}&quot;.</p>
-      )}
+        <form action="/" method="GET" className="hp-search">
+          <label htmlFor="q">Hospital name</label>
+          <div className="hp-search-row">
+            <input
+              id="q"
+              name="q"
+              type="text"
+              defaultValue={term}
+              placeholder="e.g. Anson General"
+            />
+            <button type="submit">Search</button>
+          </div>
+        </form>
+      </section>
 
-      {outcome && outcome.ok && outcome.hospitals.length > 0 && (
-        <ul>
-          {outcome.hospitals.map((h) => (
-            <li key={h.provider_ccn}>
-              <Link href={`/hospital/${h.provider_ccn}`}>
-                {h.name ?? "(name not yet resolved)"}
-              </Link>{" "}
-              — {h.state}
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="hp-results-wrap">
+        {outcome && !outcome.ok && (
+          <p className="hp-alert" role="alert">
+            We couldn&apos;t retrieve hospital data right now. Please try
+            again in a moment. ({outcome.error})
+          </p>
+        )}
+
+        {outcome && outcome.ok && outcome.hospitals.length === 0 && (
+          <p className="hp-empty">
+            No hospital found matching &quot;{term}&quot;.
+          </p>
+        )}
+
+        {outcome && outcome.ok && outcome.hospitals.length > 0 && (
+          <>
+            <p className="hp-result-count">
+              {outcome.hospitals.length}{" "}
+              {outcome.hospitals.length === 1 ? "match" : "matches"}
+            </p>
+            <ul className="hp-result-list">
+              {outcome.hospitals.map((h) => (
+                <li key={h.provider_ccn}>
+                  <Link
+                    href={`/hospital/${h.provider_ccn}`}
+                    className="hp-result-card"
+                  >
+                    <span>{h.name ?? "(name not yet resolved)"}</span>
+                    <span className="hp-result-state">{h.state}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
     </main>
   );
 }

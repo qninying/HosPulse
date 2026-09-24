@@ -42,7 +42,7 @@ export async function SiteHeader() {
   return (
     <header className="site-header">
       <Link href="/" className="site-brand">
-        HosPulse
+        <img src="/logo-dark.svg" alt="HosPulse" height={24} />
       </Link>
       <nav className="site-nav">
         <Link href="/">Health Snapshot</Link>

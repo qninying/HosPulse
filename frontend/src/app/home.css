@@ -1,0 +1,208 @@
+/* Public Health Snapshot landing page only, scoped by import (only page.tsx
+   pulls this in) so the dashboard and upload pages are untouched.
+   Tokens match the Command Center / dashboard palette for a consistent brand. */
+
+:root {
+  --hp-accent: #13a39a;
+  --hp-accent-soft: #e3f5f3;
+  --hp-danger: #c8423b;
+  --hp-danger-soft: #fbe9e7;
+  --hp-border: #e2e7ed;
+  --hp-panel: #ffffff;
+  --hp-bg: #f4f6f9;
+  --hp-ink: #1c2733;
+  --hp-muted: #5f6d7c;
+  --hp-radius: 10px;
+  --hp-radius-lg: 14px;
+  --hp-shadow: 0 1px 2px rgba(15, 42, 68, 0.06), 0 8px 24px rgba(15, 42, 68, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hp-accent: #2bc0b6;
+    --hp-accent-soft: #133a40;
+    --hp-danger: #e0685f;
+    --hp-danger-soft: #3b1c1a;
+    --hp-border: #2a3542;
+    --hp-panel: #16202b;
+    --hp-bg: #0f1620;
+    --hp-ink: #e7ecf1;
+    --hp-muted: #93a2b1;
+    --hp-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+}
+
+:root[data-theme="dark"] {
+  --hp-accent: #2bc0b6;
+  --hp-accent-soft: #133a40;
+  --hp-danger: #e0685f;
+  --hp-danger-soft: #3b1c1a;
+  --hp-border: #2a3542;
+  --hp-panel: #16202b;
+  --hp-bg: #0f1620;
+  --hp-ink: #e7ecf1;
+  --hp-muted: #93a2b1;
+  --hp-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.hp-home {
+  background: var(--hp-bg);
+  color: var(--hp-ink);
+  min-height: 100%;
+  padding: 0 0 64px;
+}
+
+.hp-hero {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 64px 32px 40px;
+  text-align: center;
+}
+
+.hp-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hp-accent);
+  background: var(--hp-accent-soft);
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-bottom: 20px;
+}
+
+.hp-hero h1 {
+  font-size: 36px;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.hp-lede {
+  font-size: 16px;
+  color: var(--hp-muted);
+  max-width: 520px;
+  margin: 0 auto 32px;
+}
+
+.hp-search {
+  max-width: 560px;
+  margin: 0 auto;
+  background: var(--hp-panel);
+  border: 1px solid var(--hp-border);
+  border-radius: var(--hp-radius-lg);
+  box-shadow: var(--hp-shadow);
+  padding: 20px 24px;
+  text-align: left;
+}
+
+.hp-search label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hp-muted);
+  margin-bottom: 8px;
+}
+
+.hp-search-row {
+  display: flex;
+  gap: 10px;
+}
+
+.hp-search-row input {
+  flex: 1;
+  font-size: 15px;
+  padding: 11px 14px;
+  border: 1px solid var(--hp-border);
+  border-radius: var(--hp-radius);
+  background: var(--hp-bg);
+  color: var(--hp-ink);
+}
+
+.hp-search-row input:focus {
+  outline: 2px solid var(--hp-accent);
+  outline-offset: 1px;
+}
+
+.hp-search-row button {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 22px;
+  border: none;
+  border-radius: var(--hp-radius);
+  background: var(--hp-accent);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.hp-search-row button:hover {
+  filter: brightness(1.06);
+}
+
+.hp-results-wrap {
+  max-width: 720px;
+  margin: 32px auto 0;
+  padding: 0 32px;
+}
+
+.hp-alert {
+  background: var(--hp-danger-soft);
+  color: var(--hp-danger);
+  border: 1px solid var(--hp-danger);
+  border-radius: var(--hp-radius);
+  padding: 14px 16px;
+  font-size: 14px;
+}
+
+.hp-empty {
+  color: var(--hp-muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.hp-result-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hp-muted);
+  margin-bottom: 12px;
+}
+
+.hp-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+
+.hp-result-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--hp-panel);
+  border: 1px solid var(--hp-border);
+  border-radius: var(--hp-radius);
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.hp-result-card:hover {
+  border-color: var(--hp-accent);
+  box-shadow: var(--hp-shadow);
+  text-decoration: none;
+}
+
+.hp-result-state {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--hp-muted);
+  background: var(--hp-bg);
+  border: 1px solid var(--hp-border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
