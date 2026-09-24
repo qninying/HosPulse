@@ -1,5 +1,5 @@
 import Link from "next/link";
-import "./home.css";
+import "./public.css";
 import {
   normalizeSearchTerm,
   searchHospitalsByName,
@@ -20,7 +20,7 @@ export default async function Home({ searchParams }: PageProps) {
   const outcome = term ? await searchHospitalsByName(term) : null;
 
   return (
-    <main className="hp-home">
+    <main className="hp-shell">
       <section className="hp-hero">
         <span className="hp-eyebrow">Public CMS cost report data &middot; no login required</span>
         <h1>HosPulse Health Snapshot</h1>
@@ -29,7 +29,7 @@ export default async function Home({ searchParams }: PageProps) {
           financial trends.
         </p>
 
-        <form action="/" method="GET" className="hp-search">
+        <form action="/" method="GET" className="hp-form-card">
           <label htmlFor="q">Hospital name</label>
           <div className="hp-search-row">
             <input
@@ -39,14 +39,14 @@ export default async function Home({ searchParams }: PageProps) {
               defaultValue={term}
               placeholder="e.g. Anson General"
             />
-            <button type="submit">Search</button>
+            <button type="submit" className="hp-button">Search</button>
           </div>
         </form>
       </section>
 
-      <div className="hp-results-wrap">
+      <div className="hp-content">
         {outcome && !outcome.ok && (
-          <p className="hp-alert" role="alert">
+          <p className="hp-alert hp-alert-danger" role="alert">
             We couldn&apos;t retrieve hospital data right now. Please try
             again in a moment. ({outcome.error})
           </p>
@@ -72,7 +72,7 @@ export default async function Home({ searchParams }: PageProps) {
                     className="hp-result-card"
                   >
                     <span>{h.name ?? "(name not yet resolved)"}</span>
-                    <span className="hp-result-state">{h.state}</span>
+                    <span className="hp-state-badge">{h.state}</span>
                   </Link>
                 </li>
               ))}

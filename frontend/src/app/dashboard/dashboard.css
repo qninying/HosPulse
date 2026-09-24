@@ -49,10 +49,39 @@
 .dc-dashboard {
   background: var(--dc-bg);
   color: var(--dc-ink);
+  min-height: 100%;
   padding: 24px 32px 48px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+.dc-dashboard h2 {
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+
+.dc-state-card {
+  max-width: 480px;
+  margin: 48px auto 0;
+  background: var(--dc-panel);
+  border: 1px solid var(--dc-border);
+  border-radius: var(--dc-radius-lg);
+  padding: 28px 32px;
+  text-align: center;
+}
+
+.dc-state-card h1 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.dc-state-card-error {
+  border-color: var(--dc-critical);
+}
+
+.dc-state-card-error [role="alert"] {
+  color: var(--dc-critical);
 }
 
 .dc-titlebar {
@@ -218,23 +247,34 @@
 .dc-trend-grid {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 22px;
+}
+
+.dc-trend-series {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .dc-trend-series-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   font-size: 13px;
   color: var(--dc-muted);
+  font-weight: 600;
 }
 
-.dc-trend-values {
+.dc-trend-latest {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dc-ink);
+}
+
+.dc-chart-empty {
   display: flex;
-  gap: 12px;
-  font-size: 13px;
-  margin-top: 4px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
 }
 
 .dc-trend-picker {
@@ -306,23 +346,52 @@
 /* Criteria detail */
 
 .dc-criteria-list {
-  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.dc-criteria-list details {
+.dc-criterion {
   border: 1px solid var(--dc-border);
   border-radius: var(--dc-radius);
-  padding: 10px 12px;
+  padding: 12px 14px;
 }
 
-.dc-criteria-list pre {
-  font-size: 12px;
-  margin-top: 8px;
-  white-space: pre-wrap;
+.dc-criterion-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.dc-criterion-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dc-criterion-values {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 6px 16px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--dc-border);
+}
+
+.dc-criterion-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.dc-criterion-row dt {
   color: var(--dc-muted);
+}
+
+.dc-criterion-row dd {
+  font-weight: 600;
+  text-align: right;
 }
 
 /* Loading skeleton */

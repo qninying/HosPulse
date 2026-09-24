@@ -11,6 +11,7 @@ import { StatusPill } from "@/components/dashboard/StatusPill";
 import { STATUS_LABEL, deriveHospitalStatus } from "@/components/dashboard/statusMapping";
 import { TrendPanel } from "@/components/dashboard/TrendPanel";
 import { CostReportFindingsList } from "@/components/dashboard/CostReportFindingsList";
+import { CriterionDetail } from "@/components/dashboard/CriterionDetail";
 
 type PageProps = {
   params: Promise<{ ccn: string }>;
@@ -73,18 +74,11 @@ export default async function DashboardHospitalPage({ params }: PageProps) {
         {hospital.flagCriteria.length === 0 ? (
           <p className="dc-muted">No criteria recorded.</p>
         ) : (
-          <ul className="dc-criteria-list">
+          <div className="dc-criteria-list">
             {hospital.flagCriteria.map((c) => (
-              <li key={c.name}>
-                <details>
-                  <summary>
-                    {c.name} &middot; {c.status}
-                  </summary>
-                  <pre>{JSON.stringify(c.values, null, 2)}</pre>
-                </details>
-              </li>
+              <CriterionDetail key={c.name} name={c.name} status={c.status} values={c.values} />
             ))}
-          </ul>
+          </div>
         )}
       </Card>
 
