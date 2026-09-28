@@ -108,7 +108,7 @@
       "acceptance_total": 3,
       "criteria": [
         {
-          "text": "Given a set of imported data, when the system computes financial metrics, then it should produce a standard set of monthly metrics.",
+          "text": "Given a set of imported data, when the system computes financial metrics, then it should produce a standard set of metrics per hospital per year.",
           "passed": false
         },
         {
