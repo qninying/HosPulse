@@ -133,6 +133,42 @@ html[data-theme="dark"] .site-header {
   border-color: rgba(255, 255, 255, 0.5);
 }
 
+.site-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 32px;
+  background: var(--brand-navy);
+  color: #b9c8d8;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) .site-footer {
+    background: var(--brand-navy-2);
+  }
+}
+
+html[data-theme="dark"] .site-footer {
+  background: var(--brand-navy-2);
+}
+
+.site-footer a {
+  color: #b9c8d8;
+}
+
+.site-footer a:hover {
+  color: #ffffff;
+}
+
+.site-footer-nav {
+  display: flex;
+  gap: 20px;
+}
+
 .site-user > a {
   color: #ffffff;
   font-weight: 600;

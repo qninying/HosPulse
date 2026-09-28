@@ -266,3 +266,21 @@
   - What changed: closed by item 2's privacy policy page (`frontend/src/app/privacy/page.tsx`, "Requesting deletion" section) rather than a separate feature -- a real, verified contact email (qninying@quinaillc.com) with an honest statement that deletion requests are handled by a person, not a self-service tool. No separate code change.
   - Verification: same as item 2 (page renders live, HTTP 200, section present).
   - Notes: confirmed with the user that this satisfies the punch-list item as scoped, rather than assuming. A self-service automated deletion endpoint would be a real, larger feature (needs to define exactly what "delete" means across `company_members`, uploaded files in Supabase Storage, `cost_report_findings`, `weekly_briefing_emails`, etc.) -- not attempted here, and not needed yet at zero real customers.
+
+- [x] Compliance follow-up 3/8: terms of service page
+  - Date: 2026-09-28
+  - What changed: `frontend/src/app/terms/page.tsx` (new) -- covers what HosPulse actually is, who can use the dashboard, the same PHI-rejection behavior stated in the privacy page, an honest AI-generated-content disclaimer (briefings/findings are grounded against source data before being shown, but are a starting point for the operator's own judgment, not a substitute for it), as-is/no-warranty language appropriate to a pre-launch product, and a data-ownership statement cross-linking to the privacy page. Same contact (Quinai LLC, qninying@quinaillc.com) as the privacy page.
+  - Verification: `npx tsc --noEmit` and `npx eslint` clean. Rendered live against a real running dev server: HTTP 200, all 10 section headings present; confirmed `/privacy` still renders correctly alongside it.
+  - Notes: deliberately left out a governing-law/jurisdiction clause -- Quinai LLC's state of incorporation isn't known to this session and wasn't provided, and fabricating one for a legal document would be worse than leaving it out. Flagged to the user; worth adding once that's confirmed.
+
+- [x] Compliance follow-up 4/8: cookie policy
+  - Date: 2026-09-28
+  - What changed: closed by item 2's privacy policy page (`frontend/src/app/privacy/page.tsx`, "Cookies" section) rather than a separate page -- confirmed with the user. States the one strictly-necessary session cookie, no tracking/advertising/analytics cookies, no third-party analytics scripts loaded. No separate code change.
+  - Verification: same as item 2.
+  - Notes: matches the original punch-list scoping, which already noted this "could live as a section on the privacy page rather than its own route" given there's genuinely only one cookie to disclose.
+
+- [x] Compliance follow-up 5/8: footer with business details
+  - Date: 2026-09-28
+  - What changed: `frontend/src/components/SiteFooter.tsx` (new) -- states the operating entity (Quinai LLC) and contact email, and links to `/privacy` and `/terms`; wired into `frontend/src/app/layout.tsx` (alongside the existing global `SiteHeader`) so it appears on every page, not just the public ones. `frontend/src/app/globals.css` -- `.site-footer` styling matching the existing header's navy palette and dark-mode cascade, `margin-top: auto` on the already-flex-column `body` so it sits at the bottom of short pages without extra wrapper markup.
+  - Verification: `npx tsc --noEmit` and `npx eslint` clean (same 1 pre-existing `no-img-element` warning as before, nothing new). Rendered live against a real running dev server across four different page types -- `/` (public), `/privacy`, `/terms`, `/login` -- confirmed HTTP 200 and "Quinai LLC" present in the footer on all four, proving it's genuinely global and not page-specific markup.
+  - Notes: before this, there was no way to find who operates HosPulse or how to contact them anywhere on the site -- this was a real gap, not a formality. Closes the "business details present" item from the audit.
