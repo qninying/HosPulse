@@ -256,7 +256,12 @@
   margin-bottom: 20px;
 }
 
-.hp-consent {
+/* ".hp-form-card label" (a class + an element) outranks a bare ".hp-consent"
+   class selector, so its display:block/margin-bottom:8px were silently
+   winning over this block's flex layout and spacing -- the checkbox
+   never actually sat in a flex row. Scoping to ".hp-form-card
+   label.hp-consent" gives this the higher specificity it needs. */
+.hp-form-card label.hp-consent {
   display: flex;
   align-items: flex-start;
   gap: 12px;
