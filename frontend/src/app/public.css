@@ -270,6 +270,70 @@
   flex-shrink: 0;
 }
 
+/* Long-form document pages (privacy, terms): the global `a { color:
+   inherit; text-decoration: none; }` makes links invisible against
+   surrounding text, and unstyled h2/p run together with no visual
+   hierarchy -- this is the card-and-section treatment the rest of the
+   site already gets via .hp-form-card, applied to prose instead of a
+   form. */
+.hp-doc {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 32px 64px;
+}
+
+.hp-doc-card {
+  background: var(--hp-panel);
+  border: 1px solid var(--hp-border);
+  border-radius: var(--hp-radius-lg);
+  box-shadow: var(--hp-shadow);
+  padding: 40px 48px;
+}
+
+.hp-doc h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.hp-doc-updated {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hp-muted);
+  margin-bottom: 28px;
+}
+
+.hp-doc p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--hp-ink);
+  margin-bottom: 16px;
+}
+
+.hp-doc h2 {
+  font-size: 17px;
+  margin-top: 32px;
+  margin-bottom: 10px;
+  padding-top: 24px;
+  border-top: 1px solid var(--hp-border);
+}
+
+.hp-doc h2:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.hp-doc a {
+  color: var(--hp-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.hp-doc a:hover {
+  text-decoration: none;
+}
+
 /* Content column (results, detail bodies, alerts) */
 
 .hp-content {
