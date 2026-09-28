@@ -1,5 +1,26 @@
+import Link from "next/link";
 import "../public.css";
 import { sendMagicLink, verifyOtpCode } from "./actions";
+
+function ConsentCheckbox({ idPrefix }: { idPrefix: string }) {
+  const id = `${idPrefix}-consent`;
+  return (
+    <label className="hp-consent" htmlFor={id}>
+      <input id={id} name="consent" type="checkbox" required />
+      <span>
+        I agree to HosPulse&apos;s{" "}
+        <Link href="/terms" target="_blank" rel="noopener noreferrer">
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link href="/privacy" target="_blank" rel="noopener noreferrer">
+          Privacy Policy
+        </Link>
+        .
+      </span>
+    </label>
+  );
+}
 
 type PageProps = {
   searchParams: Promise<{ sent?: string; error?: string; email?: string }>;
@@ -29,6 +50,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
                 placeholder="you@example.com"
               />
             </div>
+            <ConsentCheckbox idPrefix="link" />
             <button type="submit" className="hp-button hp-button-block">
               Send sign-in link
             </button>
@@ -76,6 +98,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
                 placeholder="123456"
               />
             </div>
+            <ConsentCheckbox idPrefix="code" />
             <button type="submit" className="hp-button hp-button-block">
               Verify code
             </button>

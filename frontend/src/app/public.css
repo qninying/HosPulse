@@ -7,11 +7,20 @@
 :root {
   --hp-accent: #13a39a;
   --hp-accent-soft: #e3f5f3;
-  --hp-danger: #c8423b;
+  /* Compliance follow-up item 7: --hp-accent itself (#13a39a) fails WCAG
+     AA 4.5:1 as *text* against --hp-accent-soft, and as a *background*
+     under white button text (2.77:1 and 3.12:1, measured with axe-core
+     against the real rendered pages). --hp-accent stays unchanged for
+     non-text uses (borders, focus outlines) where the brighter brand
+     teal reads correctly and isn't held to the same ratio; these two
+     darker tokens are for the specific cases that are. */
+  --hp-accent-text: #0d726c;
+  --hp-button-bg: #0d726c;
+  --hp-danger: #b23b35;
   --hp-danger-soft: #fbe9e7;
-  --hp-warning: #c98a12;
+  --hp-warning: #8b5f0c;
   --hp-warning-soft: #fcf3dd;
-  --hp-ok: #2f8f5b;
+  --hp-ok: #26744a;
   --hp-ok-soft: #e5f4eb;
   --hp-border: #e2e7ed;
   --hp-panel: #ffffff;
@@ -27,6 +36,11 @@
   :root:not([data-theme="light"]) {
     --hp-accent: #2bc0b6;
     --hp-accent-soft: #133a40;
+    /* --hp-accent already passes 4.5:1 as text on --hp-accent-soft in
+       dark mode (5.46:1) -- only the button case needs a darker value
+       here (white text on #2bc0b6 measured at 2.25:1). */
+    --hp-accent-text: #2bc0b6;
+    --hp-button-bg: #1c7b74;
     --hp-danger: #e0685f;
     --hp-danger-soft: #3b1c1a;
     --hp-warning: #e0a93a;
@@ -45,6 +59,8 @@
 :root[data-theme="dark"] {
   --hp-accent: #2bc0b6;
   --hp-accent-soft: #133a40;
+  --hp-accent-text: #2bc0b6;
+  --hp-button-bg: #1c7b74;
   --hp-danger: #e0685f;
   --hp-danger-soft: #3b1c1a;
   --hp-warning: #e0a93a;
@@ -87,7 +103,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--hp-accent);
+  color: var(--hp-accent-text);
   background: var(--hp-accent-soft);
   padding: 6px 14px;
   border-radius: 100px;
@@ -175,7 +191,7 @@
   border: none;
   border-radius: 7px;
   background: var(--hp-accent-soft);
-  color: var(--hp-accent);
+  color: var(--hp-accent-text);
   cursor: pointer;
 }
 
@@ -189,7 +205,7 @@
   padding: 11px 22px;
   border: none;
   border-radius: var(--hp-radius);
-  background: var(--hp-accent);
+  background: var(--hp-button-bg);
   color: #ffffff;
   cursor: pointer;
 }
@@ -238,6 +254,20 @@
   font-size: 13px;
   color: var(--hp-muted);
   margin-bottom: 20px;
+}
+
+.hp-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--hp-muted);
+  margin-bottom: 16px;
+}
+
+.hp-consent input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
 }
 
 /* Content column (results, detail bodies, alerts) */
@@ -348,7 +378,7 @@
 }
 
 .hp-back-link:hover {
-  color: var(--hp-accent);
+  color: var(--hp-accent-text);
   text-decoration: none;
 }
 

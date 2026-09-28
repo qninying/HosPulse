@@ -38,9 +38,11 @@ function isExecError(error: unknown): error is ExecError {
 // Node process's environment or the browser bundle.
 export async function POST(request: Request): Promise<Response> {
   let file: FormDataEntryValue | null;
+  let consent: FormDataEntryValue | null;
   try {
     const formData = await request.formData();
     file = formData.get("file");
+    consent = formData.get("consent");
   } catch {
     // An empty body or a Content-Type that isn't multipart form data
     // throws inside request.formData() itself, before any of our own
@@ -56,6 +58,16 @@ export async function POST(request: Request): Promise<Response> {
   if (!(file instanceof File)) {
     return NextResponse.json(
       { status: "error", message: "No file was provided." },
+      { status: 400 }
+    );
+  }
+
+  // The checkbox's `required` attribute blocks submission client-side,
+  // but a client can't be trusted to enforce that -- re-checked here,
+  // same boundary the login actions already draw.
+  if (consent !== "on") {
+    return NextResponse.json(
+      { status: "error", message: "You must agree to the Terms of Service and Privacy Policy before uploading." },
       { status: 400 }
     );
   }

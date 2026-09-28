@@ -12,6 +12,12 @@ export async function sendMagicLink(formData: FormData): Promise<void> {
   if (!email) {
     redirect("/login?error=missing_email");
   }
+  // The checkbox's `required` attribute blocks submission client-side,
+  // but a client can't be trusted to enforce that -- re-checked here,
+  // same boundary this codebase already draws elsewhere.
+  if (formData.get("consent") !== "on") {
+    redirect(`/login?error=consent_required&email=${encodeURIComponent(email)}`);
+  }
 
   const supabase = await createSupabaseServerClient();
   const origin = (await headers()).get("origin");
@@ -42,6 +48,9 @@ export async function verifyOtpCode(formData: FormData): Promise<void> {
   const token = String(formData.get("token") ?? "").trim();
   if (!email || !token) {
     redirect("/login?error=missing_email_or_code");
+  }
+  if (formData.get("consent") !== "on") {
+    redirect(`/login?error=consent_required&email=${encodeURIComponent(email)}`);
   }
 
   const supabase = await createSupabaseServerClient();

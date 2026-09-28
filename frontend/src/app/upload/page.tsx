@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import "../public.css";
 
 type Result = { status: string; message: string } | null;
@@ -56,6 +57,21 @@ export default function UploadPage() {
             <label htmlFor="file">Export file</label>
             <input id="file" name="file" type="file" accept=".csv" required />
           </div>
+          <label className="hp-consent" htmlFor="upload-consent">
+            <input id="upload-consent" name="consent" type="checkbox" required />
+            <span>
+              This file does not contain patient names, birth dates, or medical record
+              numbers, and I agree to HosPulse&apos;s{" "}
+              <Link href="/terms" target="_blank" rel="noopener noreferrer">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer">
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
           <button type="submit" className="hp-button hp-button-block" disabled={submitting}>
             {submitting ? "Uploading..." : "Upload"}
           </button>

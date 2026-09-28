@@ -62,6 +62,7 @@ conn.close()
       mimeType: "text/csv",
       buffer: Buffer.from(csvContent),
     });
+    await page.locator("#upload-consent").check();
     await page.getByRole("button", { name: "Upload" }).click();
 
     await expect(page.getByText(/metrics normalized/)).toBeVisible({ timeout: 15_000 });
@@ -74,6 +75,7 @@ conn.close()
       mimeType: "text/csv",
       buffer: Buffer.from(csvContent),
     });
+    await page.locator("#upload-consent").check();
     await page.getByRole("button", { name: "Upload" }).click();
 
     await expect(page.getByText(/duplicate/i)).toBeVisible({ timeout: 15_000 });
@@ -94,8 +96,29 @@ conn.close()
       mimeType: "text/csv",
       buffer: Buffer.from(phiContent),
     });
+    await page.locator("#upload-consent").check();
     await page.getByRole("button", { name: "Upload" }).click();
 
     await expect(page.getByText(/rejected/i)).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("the API route itself rejects an upload with no consent field, not just the browser checkbox", async ({
+    request,
+  }) => {
+    // The checkbox's `required` attribute is a UX hint, not the real
+    // gate -- a request that skips the browser entirely must still be
+    // rejected. Bypasses page.ts and hits /api/upload directly.
+    const response = await request.post("/api/upload", {
+      multipart: {
+        file: {
+          name: `e2e-upload-no-consent-${randomUUID()}.csv`,
+          mimeType: "text/csv",
+          buffer: Buffer.from(csvContent),
+        },
+      },
+    });
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.message).toMatch(/agree to the Terms/i);
   });
 });
