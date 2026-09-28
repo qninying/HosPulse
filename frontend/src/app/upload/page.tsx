@@ -60,8 +60,8 @@ export default function UploadPage() {
           <label className="hp-consent" htmlFor="upload-consent">
             <input id="upload-consent" name="consent" type="checkbox" required />
             <span>
-              This file does not contain patient names, birth dates, or medical record
-              numbers, and I agree to HosPulse&apos;s{" "}
+              I confirm this file does not contain patient names, birth dates, or medical
+              record numbers, and I agree to HosPulse&apos;s{" "}
               <Link href="/terms" target="_blank" rel="noopener noreferrer">
                 Terms of Service
               </Link>{" "}
