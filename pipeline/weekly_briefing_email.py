@@ -59,11 +59,20 @@ from resend.http_client_requests import RequestsClient
 
 import briefing_agent
 from env import load_env
+from unsubscribe import build_unsubscribe_url
 
 ROOT = Path(__file__).resolve().parent.parent
 CENTRAL = ZoneInfo("America/Chicago")
 
 FROM_ADDRESS = "onboarding@resend.dev"
+# Not deployed yet (frontend runs locally only as of this writing -- see
+# PROGRESS.md's "Deploy the frontend to Vercel" item), and Resend's
+# sandbox sender can only deliver to the account's own address regardless
+# -- so a real recipient can't click this link today either way. Still
+# built for real rather than stubbed: APP_BASE_URL just needs updating to
+# the real deployed origin once that happens, nothing else in this file
+# changes.
+DEFAULT_APP_BASE_URL = "http://localhost:3000"
 MAX_ATTEMPTS = 4  # first attempt + at most 3 retries
 REQUEST_TIMEOUT_SECONDS = 10.0
 BACKOFF_SECONDS = (1.0, 2.0, 4.0)
@@ -100,9 +109,13 @@ def build_subject(as_of_date: date) -> str:
     return f"HosPulse weekly briefing -- {as_of_date.isoformat()}"
 
 
-def build_html(body: str) -> str:
+def build_html(body: str, unsubscribe_url: str) -> str:
     paragraphs = "".join(f"<p>{line}</p>" for line in body.split("\n") if line.strip())
-    return f"<div>{paragraphs}</div>"
+    footer = (
+        f'<p style="font-size:12px;color:#666;margin-top:24px;">'
+        f'<a href="{unsubscribe_url}">Unsubscribe from this weekly briefing</a></p>'
+    )
+    return f"<div>{paragraphs}{footer}</div>"
 
 
 def fetch_operators(database_url: str) -> list[Operator]:
@@ -110,7 +123,11 @@ def fetch_operators(database_url: str) -> list[Operator]:
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT company_id, email FROM company_members WHERE email IS NOT NULL ORDER BY company_id, email"
+                """
+                SELECT company_id, email FROM company_members
+                WHERE email IS NOT NULL AND unsubscribed_at IS NULL
+                ORDER BY company_id, email
+                """
             )
             rows = cur.fetchall()
     finally:
@@ -219,6 +236,10 @@ def run(
     resend_api_key = os.environ.get("RESEND_API_KEY")
     if not resend_api_key:
         raise RuntimeError("RESEND_API_KEY not set -- check .env")
+    unsubscribe_secret = os.environ.get("UNSUBSCRIBE_SECRET")
+    if not unsubscribe_secret:
+        raise RuntimeError("UNSUBSCRIBE_SECRET not set -- check .env")
+    app_base_url = os.environ.get("APP_BASE_URL", DEFAULT_APP_BASE_URL)
     resend.api_key = resend_api_key
     resend.default_http_client = RequestsClient(timeout=int(REQUEST_TIMEOUT_SECONDS))
     claude_client = anthropic.Anthropic(api_key=anthropic_api_key)
@@ -256,13 +277,16 @@ def run(
 
             week_of = week_start_for(briefing.as_of_date)
             subject = build_subject(briefing.as_of_date)
-            html = build_html(briefing.body)
 
             for email in emails:
                 send_id = reserve_send_slot(conn, company_id, week_of, email, briefing_id)
                 if send_id is None:
                     already_sent += 1
                     continue
+                # Personalized per recipient -- each operator's link only
+                # unsubscribes that operator, never the whole company.
+                unsubscribe_url = build_unsubscribe_url(company_id, email, unsubscribe_secret, app_base_url)
+                html = build_html(briefing.body, unsubscribe_url)
                 try:
                     message_id = send_email_with_retry(resend, email, subject, html, sleep=sleep)
                     record_send_result(conn, send_id, "sent", provider_message_id=message_id)

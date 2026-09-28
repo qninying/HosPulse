@@ -371,6 +371,15 @@ CREATE POLICY "company scoped read" ON slipping_hospital_alerts
 -- rather than depend on a system that doesn't exist yet.
 ALTER TABLE company_members ADD COLUMN IF NOT EXISTS email text;
 
+-- Compliance audit follow-up: the weekly briefing email had no
+-- unsubscribe mechanism (a real CAN-SPAM gap once real recipients are
+-- mailed, not just the Resend sandbox address). NULL = still subscribed;
+-- a real timestamp is set the first time the recipient's own
+-- HMAC-verified link is visited (pipeline/unsubscribe.py), and never
+-- overwritten on a repeat visit -- see unsubscribe.py's own idempotency
+-- note.
+ALTER TABLE company_members ADD COLUMN IF NOT EXISTS unsubscribed_at timestamptz;
+
 -- One row per (company, week, recipient) send attempt. The UNIQUE
 -- constraint IS the idempotency key: reserved via
 -- INSERT ... ON CONFLICT DO NOTHING *before* Resend is ever called (see

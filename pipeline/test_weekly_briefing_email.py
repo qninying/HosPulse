@@ -41,8 +41,14 @@ def test_build_subject_includes_the_date():
 
 
 def test_build_html_wraps_nonblank_lines_and_drops_blank_ones():
-    html = build_html("Hospital A is at risk.\n\nHospital B is stable.")
-    assert html == "<div><p>Hospital A is at risk.</p><p>Hospital B is stable.</p></div>"
+    html = build_html("Hospital A is at risk.\n\nHospital B is stable.", "http://example.com/unsub")
+    assert "<p>Hospital A is at risk.</p><p>Hospital B is stable.</p>" in html
+
+
+def test_build_html_includes_the_recipients_own_unsubscribe_link():
+    html = build_html("Hospital A is at risk.", "http://example.com/unsub?email=a%40example.com")
+    assert 'href="http://example.com/unsub?email=a%40example.com"' in html
+    assert "Unsubscribe" in html
 
 
 # --- send_email_with_retry: retry / backoff / failure ---------------------
