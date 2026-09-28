@@ -259,15 +259,21 @@
 .hp-consent {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 12px;
   font-size: 13px;
+  line-height: 1.55;
   color: var(--hp-muted);
-  margin-bottom: 16px;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .hp-consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
   margin-top: 2px;
   flex-shrink: 0;
+  accent-color: var(--hp-button-bg);
+  cursor: pointer;
 }
 
 /* Long-form document pages (privacy, terms): the global `a { color:
