@@ -3,13 +3,13 @@
   "project": "HosPulse",
   "totals": {
     "stories_total": 14,
-    "stories_verified": 13,
-    "stories_submitted": 1,
+    "stories_verified": 14,
+    "stories_submitted": 0,
     "stories_in_progress": 0,
     "stories_not_started": 0,
     "criteria_total": 44,
-    "criteria_passed": 43,
-    "points_awarded": 2723
+    "criteria_passed": 44,
+    "points_awarded": 2780
   },
   "stories": [
     {
@@ -34,7 +34,7 @@
           "passed": true
         },
         {
-          "text": "Trust \u2014 no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
       ],
@@ -131,17 +131,15 @@
       "notes": "Criterion 1's wording was fixed by the portal on 2026-09-28 (commit 1c20066, plan v2) -- 'produce a standard set of monthly metrics' corrected to 'produce a standard set of metrics per hospital per year', matching REQ-002 and removing the REQ-011/STORY-011 language that had been copied in by mistake (flagged on 2026-09-22, confirmed by Ali the same day this was fixed). The bot's sync commit updates criterion text only, not pass/fail -- the corrected wording is exactly what was already built and verified in the original STORY-001/002 hardening work: cost_report_years.operating_margin_pct/days_cash_on_hand/days_in_ar are Postgres GENERATED ALWAYS AS STORED columns, unique per (provider_ccn, fiscal_year), so a 'standard set of metrics per hospital per year' has been genuinely true since 2026-09-22 -- ticking it now reflects that the requirement changed to match reality, not that anything new was built today. Criteria 2 and 3 unchanged. All three criteria now pass 3/3, same underlying evidence as before (see files_touched/tests_added below, unchanged from the original 2026-09-22 entry).",
       "updated_at": "2026-09-28T00:00:00Z",
       "verification": {
-        "state": "submitted",
-        "criteria_passed": 2,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-28T14:25:43.454Z",
         "commit_sha": "919c2c08a6acb8449ca1247d6b2be904adbd7a7b",
         "commit_url": "https://github.com/qninying/HosPulse/commit/919c2c08a6acb8449ca1247d6b2be904adbd7a7b",
         "commit_at": "2026-09-22T23:39:42Z",
-        "points_awarded": 191,
-        "outstanding": [
-          "Given a set of imported data, when the system computes financial metrics, then it should produce a standard set of monthly metrics."
-        ]
+        "points_awarded": 248,
+        "outstanding": []
       }
     },
     {
