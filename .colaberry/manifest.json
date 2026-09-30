@@ -7,6 +7,78 @@
   "truth_revision": 1,
   "files": [
     {
+      "path": ".colaberry/plan.json",
+      "sha256": "ded57bc6524ba3274044a168bef9a1bec674b468e2adf68534d093be66a5114f"
+    },
+    {
+      "path": ".colaberry/profile.json",
+      "sha256": "e0084a678f8e0fa8bed5ae556dc3f3f3332647a4dc1b78da21905960d1a56be8"
+    },
+    {
+      "path": ".colaberry/progress.json",
+      "sha256": "274342fa0ccdc88c8d40e57204c3913f89213439f003864b307cb557119bd927"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "9d98e6a58bcc26044309a6a3b401035c5349fff33be33423b222063837607273"
+    },
+    {
+      "path": "artifacts/INDEX.md",
+      "sha256": "37ba5534a75b9622b85a88dd7dc988a7680d8eb4c9a6b9c94fd5d1e4ec74898f"
+    },
+    {
+      "path": "artifacts/week-01/workflow-diagram.pdf",
+      "sha256": "c75d2eed5ec43974327b95da4137a821dfdd13c80161e432e92882ff66bfc034"
+    },
+    {
+      "path": "artifacts/week-02/skill.md",
+      "sha256": "d3104e7f6c3a38236e8825d04983e2279ac8e91a9ad1e44c5b8e3bf92f7bd295"
+    },
+    {
+      "path": "artifacts/week-03/business-workflow-assistant.csv",
+      "sha256": "270dbd48ac788638105f94eed7e674e4c80f2b7947c0cc5debf42c3044ab2bf6"
+    },
+    {
+      "path": "artifacts/week-04/enterprise-prompt-library-structure.csv",
+      "sha256": "c385f1d05d633dad22c58fd14bf60a00a9ccd330d3d3a5bb831a35b84b0f2858"
+    },
+    {
+      "path": "artifacts/week-05/mcp-server-configuration.csv",
+      "sha256": "141a16f0e9d18942b95bc7fdd9bfde87ac7b20489a7c88dfe2f33e9f87d515e9"
+    },
+    {
+      "path": "artifacts/week-06/enterprise-prompt-library.md",
+      "sha256": "e2010b2ed56dcab84f49a60717a4059422963dd0701becacdbb7652d0645f141"
+    },
+    {
+      "path": "artifacts/week-07/specialized-subagent-design.csv",
+      "sha256": "408bf2c53e0bffd0fab60160b978ac5efc5e9fdb3391dde94a891b8811d5d355"
+    },
+    {
+      "path": "artifacts/week-08/custom-commands.csv",
+      "sha256": "ff0c5bd53d4329a72b3aceddd24e5e8a0331c8e2f62aa464e2809de7f94e639c"
+    },
+    {
+      "path": "artifacts/week-09/reliability-layer-design.csv",
+      "sha256": "9622a1275acd74bbbcbe834d01b5b27a0477402e734709afe9161781334d8ff2"
+    },
+    {
+      "path": "artifacts/week-10/hitl-escalation-path.csv",
+      "sha256": "edb87e203e3f33dd1d55f59f906aabd1610e04aa6b0be424f97846eaf33184ad"
+    },
+    {
+      "path": "artifacts/week-11/7-layer-architecture-mapping.csv",
+      "sha256": "93e6e528be1ebbd7c19c3ea2dbe400742d9239b9fb35f7bd54c72225399bc55d"
+    },
+    {
+      "path": "artifacts/week-12/coreops-program-inventory.csv",
+      "sha256": "1f27fb8e057bb5315544d7a80b672850484033aae67c6600aca4e72f75552cc3"
+    },
+    {
+      "path": "docs/DATA_CONTRACT.md",
+      "sha256": "d56e89edcfe36725945d961cf3479b646507d1fa855bba0dcdfff3f8f8a658b0"
+    },
+    {
       "path": "docs/REQUIREMENTS.md",
       "sha256": "9960c2b7175886fc31c96fb9c6468dfec1ac504b2c7fec1bfe636f5e537d7a4d"
     },
@@ -19,12 +91,8 @@
       "sha256": "47b178b369de009af83ac19e05d2d1a729e9eff5cbe75bd04e6005b93066c3f2"
     },
     {
-      "path": "docs/DATA_CONTRACT.md",
-      "sha256": "d56e89edcfe36725945d961cf3479b646507d1fa855bba0dcdfff3f8f8a658b0"
-    },
-    {
-      "path": "CLAUDE.md",
-      "sha256": "9d98e6a58bcc26044309a6a3b401035c5349fff33be33423b222063837607273"
+      "path": "docs/stories/STORY-000.md",
+      "sha256": "924951cf75ba92b17763784438a10742078fd4a2b445079f8a882b0ea8ca29c2"
     },
     {
       "path": "docs/stories/STORY-001.md",
@@ -77,22 +145,6 @@
     {
       "path": "docs/stories/STORY-013.md",
       "sha256": "2a5b354ed82bac1326437b27ff694c43c6e87ed0e3c019fbdc1ba67c589a6480"
-    },
-    {
-      "path": "docs/stories/STORY-000.md",
-      "sha256": "924951cf75ba92b17763784438a10742078fd4a2b445079f8a882b0ea8ca29c2"
-    },
-    {
-      "path": ".colaberry/plan.json",
-      "sha256": "ded57bc6524ba3274044a168bef9a1bec674b468e2adf68534d093be66a5114f"
-    },
-    {
-      "path": ".colaberry/progress.json",
-      "sha256": "274342fa0ccdc88c8d40e57204c3913f89213439f003864b307cb557119bd927"
-    },
-    {
-      "path": ".colaberry/profile.json",
-      "sha256": "e0084a678f8e0fa8bed5ae556dc3f3f3332647a4dc1b78da21905960d1a56be8"
     }
   ]
 }
