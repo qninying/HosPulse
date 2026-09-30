@@ -24,7 +24,7 @@
     },
     {
       "path": "artifacts/INDEX.md",
-      "sha256": "37ba5534a75b9622b85a88dd7dc988a7680d8eb4c9a6b9c94fd5d1e4ec74898f"
+      "sha256": "43b135c686d5537da28c8620a60134be5364b5b28ab0a0ca81100a0dff2f089f"
     },
     {
       "path": "artifacts/week-01/workflow-diagram.pdf",
@@ -49,6 +49,10 @@
     {
       "path": "artifacts/week-06/enterprise-prompt-library.md",
       "sha256": "e2010b2ed56dcab84f49a60717a4059422963dd0701becacdbb7652d0645f141"
+    },
+    {
+      "path": "artifacts/week-06/progress-log-notification-framework.docx",
+      "sha256": "2c2a3bb0edee2f8ec1a8c8dc41233fcd1e2d0161ea396ebf3cdddf5c46396ca5"
     },
     {
       "path": "artifacts/week-07/specialized-subagent-design.csv",
