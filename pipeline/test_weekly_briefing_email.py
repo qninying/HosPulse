@@ -9,6 +9,7 @@ from weekly_briefing_email import (
     build_subject,
     send_email_with_retry,
     should_run_now,
+    unsent_recipients,
     week_start_for,
 )
 
@@ -24,8 +25,24 @@ def test_should_run_now_false_on_a_different_day():
     assert should_run_now(datetime(2026, 9, 29, 6, 0)) is False  # a Tuesday
 
 
-def test_should_run_now_false_at_a_different_hour():
-    assert should_run_now(datetime(2026, 9, 28, 7, 0)) is False
+def test_should_run_now_false_before_6am_on_monday():
+    assert should_run_now(datetime(2026, 9, 28, 5, 59)) is False
+
+
+def test_should_run_now_true_when_github_starts_the_monday_run_hours_late():
+    # Regression: 2026-10-05's scheduled run started at 14:24 Central and the
+    # old exact-hour gate skipped it, so no weekly briefing went out.
+    assert should_run_now(datetime(2026, 10, 5, 14, 24)) is True
+    assert should_run_now(datetime(2026, 10, 5, 23, 59)) is True
+
+
+def test_unsent_recipients_drops_operators_already_reserved_this_week():
+    assert unsent_recipients(["a@x.com", "b@x.com"], {"a@x.com"}) == ["b@x.com"]
+
+
+def test_unsent_recipients_empty_when_whole_company_already_reserved():
+    assert unsent_recipients(["a@x.com"], {"a@x.com"}) == []
+    assert unsent_recipients([], set()) == []
 
 
 def test_week_start_for_returns_the_monday_of_that_week():

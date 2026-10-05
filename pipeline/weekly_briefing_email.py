@@ -34,9 +34,14 @@ isolated to the one company it happened to:
 
 DST note: GitHub Actions cron runs in UTC, and 6:00 AM Central is either
 11:00 or 12:00 UTC depending on the time of year. The workflow schedules
-both; should_run_now() is the actual gate that makes exactly one of those
-two firings do real work, regardless of which side of the DST transition
-it is.
+both. should_run_now() opens at 6:00 AM Central Monday and stays open for
+the rest of Monday, not just the 6 o'clock hour: GitHub delays scheduled
+runs by hours under load (on 2026-09-28 and 2026-10-05 both firings
+started 7-8 hours late), and an exact-hour gate silently skipped every
+one of them. Because both firings can now pass the gate, a company whose
+operators were all already reserved this week is skipped *before* Claude
+is called (fetch_reserved_recipients / unsent_recipients), so the second
+firing costs nothing and sends nothing.
 
 Usage: python3 weekly_briefing_email.py [--force]
 """
@@ -97,8 +102,16 @@ class Operator:
 
 def should_run_now(now_central: datetime) -> bool:
     """REQ-014's actual time gate, evaluated in Central time regardless of
-    which UTC offset GitHub Actions' cron fired at."""
-    return now_central.weekday() == 0 and now_central.hour == 6
+    which UTC offset GitHub Actions' cron fired at. Open from 6:00 AM
+    Central for the rest of Monday, so a late-started GitHub run still
+    sends; weekly_briefing_emails' unique key keeps it to one email per
+    operator per week."""
+    return now_central.weekday() == 0 and now_central.hour >= 6
+
+
+def unsent_recipients(emails: list[str], already_reserved: set[str]) -> list[str]:
+    """The operators of one company who have no send row yet this week."""
+    return [email for email in emails if email not in already_reserved]
 
 
 def week_start_for(d: date) -> date:
@@ -140,6 +153,18 @@ def group_operators_by_company(operators: list[Operator]) -> dict[str, list[str]
     for operator in operators:
         by_company.setdefault(operator.company_id, []).append(operator.email)
     return by_company
+
+
+def fetch_reserved_recipients(conn, company_id: str, week_of: date) -> set[str]:
+    """Recipients already holding a send row for this company and week, in
+    any status. Read before generating a briefing so a repeat firing does
+    not pay for a Claude call whose emails could never be sent."""
+    with conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT recipient_email FROM weekly_briefing_emails WHERE company_id = %s AND week_of = %s",
+            (company_id, week_of),
+        )
+        return {row[0] for row in cur.fetchall()}
 
 
 def reserve_send_slot(conn, company_id: str, week_of: date, recipient_email: str, briefing_id: int) -> int | None:
@@ -252,7 +277,11 @@ def run(
     conn = psycopg2.connect(database_url, connect_timeout=10)
     try:
         sent, already_sent, failed, no_briefing = 0, 0, 0, 0
+        week_of = week_start_for(now_central.date())
         for company_id, emails in operators_by_company.items():
+            if not unsent_recipients(emails, fetch_reserved_recipients(conn, company_id, week_of)):
+                already_sent += len(emails)
+                continue
             try:
                 briefing = briefing_agent.generate_and_save_company_briefing(claude_client, database_url, company_id)
             except (
@@ -275,7 +304,6 @@ def run(
                 )
                 briefing_id = cur.fetchone()[0]
 
-            week_of = week_start_for(briefing.as_of_date)
             subject = build_subject(briefing.as_of_date)
 
             for email in emails:
